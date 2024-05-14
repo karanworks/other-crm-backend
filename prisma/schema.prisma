@@ -271,3 +271,27 @@ model Session {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 }
+
+
+model Lead{
+    id Int @id @default(autoincrement())
+    clientName String?
+    projectGenre String?
+    projectStatus String?
+    projectDueDate DateTime
+    youtubeLink String?
+    addedBy Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+}
+
+
+model Dropdown{
+  id Int @id @default(autoincrement())
+  dropdownName String?
+  category String
+  status Int
+  addedBy Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}

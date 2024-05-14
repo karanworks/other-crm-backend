@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const cronJob = require("./utils/cron");
+require("dotenv").config();
 
 // routers
 const homeRouter = require("./routes/home");
@@ -32,14 +33,14 @@ app.use(express.json());
 // cors connection
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "http://localhost:3002",
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
   })
 );
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3002");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, PUT, POST, PATCH, DELETE"
@@ -74,6 +75,6 @@ app.use("/", numberRouter);
 app.use("/", speechRouter);
 app.use("/", designRouter);
 
-app.listen(process.env.PORT || 3001, () => {
+app.listen(process.env.PORT || 3003, () => {
   console.log(`Server listening at port no -> ${process.env.PORT}`);
 });
