@@ -26,6 +26,7 @@ model User {
   numbers Number[]
   speeches Speech[]
   designs IvrDesign[]
+  leads Lead[]
   users   Json?
   roleId Int
   adminId Int?
@@ -278,8 +279,9 @@ model Lead{
     clientName String?
     projectGenre String?
     projectStatus String?
-    projectDueDate DateTime
+    projectDueDate DateTime?
     youtubeLink String?
+    user User? @relation(fields: [addedBy], references: [id])
     addedBy Int
     createdAt DateTime @default(now())
     updatedAt DateTime @default(now())

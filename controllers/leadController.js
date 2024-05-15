@@ -3,10 +3,62 @@ const prisma = new PrismaClient();
 const response = require("../utils/response");
 const getToken = require("../utils/getToken");
 class LeadController {
+  async leadsGet(req, res) {
+    try {
+      const token = await getToken(req, res);
+
+      if (token) {
+        const { isActive } = await prisma.user.findFirst({
+          where: {
+            token: parseInt(token),
+          },
+        });
+
+        if (isActive) {
+          const loggedInUser = await prisma.user.findFirst({
+            where: {
+              token: parseInt(token),
+            },
+            select: {
+              id: true,
+              email: true,
+              password: true,
+              adminId: true,
+              campaigns: {
+                select: {
+                  id: true,
+                  campaignName: true,
+                  campaignDescription: true,
+                  crmFields: true,
+                  dispositions: true,
+                },
+              },
+              leads: true,
+            },
+          });
+
+          const { password, ...adminDataWithoutPassword } = loggedInUser;
+
+          response.success(res, "Leads fetched", {
+            ...adminDataWithoutPassword,
+          });
+        } else {
+          response.error(res, "User not active!");
+        }
+      } else {
+        response.error(res, "user not already logged in.");
+      }
+    } catch (error) {
+      console.log("error while getting leads", error);
+    }
+  }
+
   async leadCreatePost(req, res) {
     try {
       const { clientName, projectGenre, projectStatus, projectDueDate } =
         req.body;
+
+      console.log("CREATE LEAD API CALLED ->", req.body);
 
       const token = await getToken(req, res);
 
@@ -30,7 +82,7 @@ class LeadController {
       //       alreadyExists
       //     );
       //   } else {
-      const newLead = await prisma.Lead.create({
+      const newLead = await prisma.lead.create({
         data: {
           clientName,
           projectGenre,
@@ -49,12 +101,17 @@ class LeadController {
 
   async leadUpdatePatch(req, res) {
     try {
-      const { campaignName, campaignDescription, campaignType } = req.body;
-      const { campaignId } = req.params;
+      const {
+        clientName,
+        projectGenre,
+        projectStatus,
+        projectYoutubeLink,
+        projectDueDate,
+      } = req.body;
+      const { leadId } = req.params;
 
       const token = await getToken(req, res);
 
-      // admin that is creating the campaign
       const adminUser = await prisma.user.findFirst({
         where: {
           token: parseInt(token),
@@ -62,75 +119,66 @@ class LeadController {
       });
 
       // finding campaign from id
-      const campaignFound = await prisma.campaign.findFirst({
+      const leadFound = await prisma.lead.findFirst({
         where: {
-          id: parseInt(campaignId),
+          id: parseInt(leadId),
         },
       });
 
-      const alreadyExists = await prisma.campaign.findFirst({
-        where: {
-          adminId: adminUser.id,
-          campaignName,
-        },
-      });
-
-      if (campaignFound) {
-        if (alreadyExists) {
-          response.error(
-            res,
-            "Campaign with same name already exists!",
-            alreadyExists
-          );
-        } else {
-          const updatedCampaign = await prisma.campaign.update({
+      if (adminUser) {
+        if (leadFound) {
+          const updatedLead = await prisma.lead.update({
             where: {
-              id: parseInt(campaignId),
+              id: parseInt(leadId),
             },
             data: {
-              campaignName,
-              campaignDescription,
-              campaignType,
+              clientName,
+              projectGenre,
+              projectStatus,
+              projectDueDate,
+              projectYoutubeLink,
             },
           });
 
-          response.success(res, "Campaign updated successfully", {
-            updatedCampaign,
+          response.success(res, "Lead updated successfully", {
+            updatedLead,
           });
+        } else {
+          response.error(res, "Lead not found!");
         }
       } else {
-        response.error(res, "Campaign not found!");
+        response.error(res, "User not found!");
       }
     } catch (error) {
-      console.log("error while updating campaign ", error);
+      console.log("error while updating lead ", error);
     }
   }
   async leadRemoveDelete(req, res) {
     try {
-      const { campaignId } = req.params;
+      const { leadId } = req.params;
 
       // finding campaign from campaignId
-      const campaignFound = await prisma.campaign.findFirst({
+      const leadFound = await prisma.lead.findFirst({
         where: {
-          id: parseInt(campaignId),
+          id: parseInt(leadId),
         },
       });
 
-      if (campaignFound) {
-        const deletedCampaign = await prisma.campaign.delete({
+      if (leadFound) {
+        const deletedLead = await prisma.lead.delete({
           where: {
-            id: parseInt(campaignId),
+            id: parseInt(leadId),
           },
         });
 
-        response.success(res, "Campaign deleted successfully!", {
-          deletedCampaign,
+        response.success(res, "Lead deleted successfully!", {
+          deletedLead,
         });
       } else {
-        response.error(res, "Campaign does not exist!");
+        response.error(res, "Lead does not exist!");
       }
     } catch (error) {
-      console.log("error while deleting campaign ", error);
+      console.log("error while deleting lead ", error);
     }
   }
 }

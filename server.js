@@ -21,6 +21,7 @@ const ivrCampaignRouter = require("./routes/ivrCampaign");
 const numberRouter = require("./routes/number");
 const speechRouter = require("./routes/speech");
 const designRouter = require("./routes/design");
+const leadRouter = require("./routes/lead");
 
 // cookie parser
 const cookieParser = require("cookie-parser");
@@ -74,6 +75,7 @@ app.use("/", ivrCampaignRouter);
 app.use("/", numberRouter);
 app.use("/", speechRouter);
 app.use("/", designRouter);
+app.use("/", leadRouter);
 
 app.listen(process.env.PORT || 3003, () => {
   console.log(`Server listening at port no -> ${process.env.PORT}`);

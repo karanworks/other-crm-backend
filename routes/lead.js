@@ -1,12 +1,10 @@
 const express = require("express");
-const addLeadRouter = express.Router({ mergeParams: true });
-const AddLeadController = require("../controllers/leadController");
+const leadRouter = express.Router({ mergeParams: true });
+const LeadController = require("../controllers/leadController");
 
-addLeadRouter.post("/lead/create", AddLeadController.leadCreatePost);
-addLeadRouter.patch("/lead/:leadId/edit", AddLeadController.leadUpdatePatch);
-addLeadRouter.delete(
-  "/lead/:leadId/delete",
-  AddLeadController.leadRemoveDelete
-);
+leadRouter.get("/leads", LeadController.leadsGet);
+leadRouter.post("/lead/create", LeadController.leadCreatePost);
+leadRouter.patch("/lead/:leadId/edit", LeadController.leadUpdatePatch);
+leadRouter.delete("/lead/:leadId/delete", LeadController.leadRemoveDelete);
 
-module.exports = addLeadRouter;
+module.exports = leadRouter;
