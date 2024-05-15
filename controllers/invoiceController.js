@@ -2,8 +2,8 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const response = require("../utils/response");
 const getToken = require("../utils/getToken");
-class LeadController {
-  async leadsGet(req, res) {
+class InvoiceController {
+  async invoicesGet(req, res) {
     try {
       const token = await getToken(req, res);
 
@@ -35,12 +35,13 @@ class LeadController {
               },
               leads: true,
               dropdowns: true,
+              invoices: true,
             },
           });
 
           const { password, ...adminDataWithoutPassword } = loggedInUser;
 
-          response.success(res, "Leads fetched", {
+          response.success(res, "Invoices fetched", {
             ...adminDataWithoutPassword,
           });
         } else {
@@ -50,19 +51,13 @@ class LeadController {
         response.error(res, "user not already logged in.");
       }
     } catch (error) {
-      console.log("error while getting leads", error);
+      console.log("error while getting invoices", error);
     }
   }
 
-  async leadCreatePost(req, res) {
+  async invoiceCreatePost(req, res) {
     try {
-      const {
-        clientName,
-        projectGenre,
-        projectStatus,
-        projectDueDate,
-        youtubeLink,
-      } = req.body;
+      const { amount, balance, paymentDate, dueDate } = req.body;
 
       const token = await getToken(req, res);
 
@@ -72,48 +67,26 @@ class LeadController {
         },
       });
 
-      //   const alreadyExists = await prisma.Lead.findFirst({
-      //     where: {
-      //       adminId: adminUser.id,
-      //       campaignName,
-      //     },
-      //   });
-
-      //   if (alreadyExists) {
-      //     response.error(
-      //       res,
-      //       "Campaign with same name already exists!",
-      //       alreadyExists
-      //     );
-      //   } else {
-      const newLead = await prisma.lead.create({
+      const newInvoice = await prisma.invoice.create({
         data: {
-          clientName,
-          projectGenre,
-          projectStatus,
-          projectDueDate,
-          youtubeLink,
+          amount,
+          balance,
+          paymentDate,
+          dueDate,
           addedBy: adminUser.id,
         },
       });
 
-      response.success(res, "new lead created!", newLead);
-      //   }
+      response.success(res, "new invoice created!", newInvoice);
     } catch (error) {
-      console.log("error while creating lead ->", error);
+      console.log("error while creating invoice ->", error);
     }
   }
 
-  async leadUpdatePatch(req, res) {
+  async invoiceUpdatePatch(req, res) {
     try {
-      const {
-        clientName,
-        projectGenre,
-        projectStatus,
-        youtubeLink,
-        projectDueDate,
-      } = req.body;
-      const { leadId } = req.params;
+      const { amount, balance, paymentDate, dueDate } = req.body;
+      const { invoiceId } = req.params;
 
       const token = await getToken(req, res);
 
@@ -124,68 +97,67 @@ class LeadController {
       });
 
       // finding campaign from id
-      const leadFound = await prisma.lead.findFirst({
+      const invoiceFound = await prisma.invoice.findFirst({
         where: {
-          id: parseInt(leadId),
+          id: parseInt(invoiceId),
         },
       });
 
       if (adminUser) {
-        if (leadFound) {
-          const updatedLead = await prisma.lead.update({
+        if (invoiceFound) {
+          const updatedInvoice = await prisma.invoice.update({
             where: {
-              id: parseInt(leadId),
+              id: parseInt(invoiceId),
             },
             data: {
-              clientName,
-              projectGenre,
-              projectStatus,
-              projectDueDate,
-              youtubeLink,
+              amount,
+              balance,
+              paymentDate,
+              dueDate,
             },
           });
 
-          response.success(res, "Lead updated successfully", {
-            updatedLead,
+          response.success(res, "Invoice updated successfully", {
+            updatedInvoice,
           });
         } else {
-          response.error(res, "Lead not found!");
+          response.error(res, "Invoice not found!");
         }
       } else {
         response.error(res, "User not found!");
       }
     } catch (error) {
-      console.log("error while updating lead ", error);
+      console.log("error while updating invoice ", error);
     }
   }
-  async leadRemoveDelete(req, res) {
+  async invoiceRemoveDelete(req, res) {
     try {
-      const { leadId } = req.params;
+      const { invoiceId } = req.params;
 
       // finding campaign from campaignId
-      const leadFound = await prisma.lead.findFirst({
+      const invoiceFound = await prisma.invoice.findFirst({
         where: {
-          id: parseInt(leadId),
+          id: parseInt(invoiceId),
         },
       });
 
-      if (leadFound) {
-        const deletedLead = await prisma.lead.delete({
+      if (invoiceFound) {
+        const deletedInvoice = await prisma.invoice.delete({
           where: {
-            id: parseInt(leadId),
+            id: parseInt(invoiceId),
           },
         });
 
-        response.success(res, "Lead deleted successfully!", {
-          deletedLead,
+        response.success(res, "Invoice deleted successfully!", {
+          deletedInvoice,
         });
       } else {
-        response.error(res, "Lead does not exist!");
+        response.error(res, "invoice does not exist!");
       }
     } catch (error) {
-      console.log("error while deleting lead ", error);
+      console.log("error while deleting invoice ", error);
     }
   }
 }
 
-module.exports = new LeadController();
+module.exports = new InvoiceController();

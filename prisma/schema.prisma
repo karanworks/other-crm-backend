@@ -27,6 +27,8 @@ model User {
   speeches Speech[]
   designs IvrDesign[]
   leads Lead[]
+  dropdowns Dropdown[]
+  invoices Invoice[]
   users   Json?
   roleId Int
   adminId Int?
@@ -276,10 +278,10 @@ model Session {
 
 model Lead{
     id Int @id @default(autoincrement())
-    clientName String?
-    projectGenre String?
-    projectStatus String?
-    projectDueDate DateTime?
+    clientName String
+    projectGenre String
+    projectStatus String
+    projectDueDate String
     youtubeLink String?
     user User? @relation(fields: [addedBy], references: [id])
     addedBy Int
@@ -292,8 +294,22 @@ model Dropdown{
   id Int @id @default(autoincrement())
   dropdownName String?
   category String
-  status Int
+  user User? @relation(fields: [addedBy], references: [id])
   addedBy Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+}
+
+model Invoice{
+  id Int @id @default(autoincrement())
+  amount String
+  balance String
+  paymentDate String
+  dueDate String
+  user User? @relation(fields: [addedBy], references: [id])
+  addedBy Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+
 }
