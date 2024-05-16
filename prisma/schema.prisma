@@ -302,14 +302,16 @@ model Dropdown{
 
 model Invoice{
   id Int @id @default(autoincrement())
-  amount String
+  clientName String
+  totalAmount String
   balance String
   paymentDate String
-  dueDate String
+  paymentAmount String
+  paymentDueDate String
   user User? @relation(fields: [addedBy], references: [id])
   addedBy Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
-
-
 }
+
+

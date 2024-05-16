@@ -57,7 +57,14 @@ class InvoiceController {
 
   async invoiceCreatePost(req, res) {
     try {
-      const { amount, balance, paymentDate, dueDate } = req.body;
+      const {
+        clientName,
+        paymentAmount,
+        paymentDate,
+        totalAmount,
+        balance,
+        paymentDueDate,
+      } = req.body;
 
       const token = await getToken(req, res);
 
@@ -69,10 +76,12 @@ class InvoiceController {
 
       const newInvoice = await prisma.invoice.create({
         data: {
-          amount,
-          balance,
+          clientName,
+          paymentAmount,
           paymentDate,
-          dueDate,
+          totalAmount,
+          balance,
+          paymentDueDate,
           addedBy: adminUser.id,
         },
       });
