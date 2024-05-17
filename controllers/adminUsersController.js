@@ -25,6 +25,7 @@ class AdminUsers {
               email: true,
               password: true,
               adminId: true,
+              roleId: true,
             },
           });
 

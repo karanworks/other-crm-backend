@@ -24,7 +24,7 @@ class LeadController {
               email: true,
               password: true,
               adminId: true,
-
+              roleId: true,
               leads: true,
               dropdowns: true,
             },
