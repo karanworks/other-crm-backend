@@ -24,18 +24,18 @@ class InvoiceController {
               email: true,
               password: true,
               adminId: true,
-              campaigns: {
-                select: {
-                  id: true,
-                  campaignName: true,
-                  campaignDescription: true,
-                  crmFields: true,
-                  dispositions: true,
-                },
-              },
+
               leads: true,
               dropdowns: true,
-              invoices: true,
+              invoices: {
+                select: {
+                  clientName: true,
+                  totalAmount: true,
+                  balance: true,
+                  paymentDueDate: true,
+                  payments: true,
+                },
+              },
             },
           });
 
@@ -62,7 +62,6 @@ class InvoiceController {
         paymentAmount,
         paymentDate,
         totalAmount,
-        balance,
         paymentDueDate,
       } = req.body;
 
@@ -77,14 +76,33 @@ class InvoiceController {
       const newInvoice = await prisma.invoice.create({
         data: {
           clientName,
-          paymentAmount,
-          paymentDate,
           totalAmount,
-          balance,
           paymentDueDate,
           addedBy: adminUser.id,
         },
       });
+
+      if (paymentAmount && paymentDate) {
+        await prisma.payment.create({
+          data: {
+            invoiceId: newInvoice.id,
+            amount: paymentAmount,
+            date: paymentDate,
+            addedBy: adminUser.id,
+          },
+        });
+
+        const invoiceBalanceUpdate = await prisma.invoice.update({
+          where: {
+            id: newInvoice.id,
+          },
+          data: {
+            balance: totalAmount - paymentAmount,
+          },
+        });
+        response.success(res, "new invoice created!", invoiceBalanceUpdate);
+        return;
+      }
 
       response.success(res, "new invoice created!", newInvoice);
     } catch (error) {

@@ -4,20 +4,18 @@ const response = require("../utils/response");
 const getLoggedInUser = require("../utils/getLoggedInUser");
 const getMenus = require("../utils/getMenus");
 const getToken = require("../utils/getToken");
-const session = require("../utils/session");
 
 class AdminAuthController {
   async userRegisterPost(req, res) {
     try {
-      const { name, email, password, roleId, agentMobile, campaigns } =
-        req.body;
+      const { name, email, password, roleId } = req.body;
       const userIp = req.socket.remoteAddress;
 
       const loggedInUser = await getLoggedInUser(req, res);
 
       const alreadyRegistered = await prisma.user.findFirst({
         where: {
-          OR: [{ email }, { agentMobile }],
+          OR: [{ email }],
         },
       });
 
@@ -27,12 +25,6 @@ class AdminAuthController {
             response.error(
               res,
               "User already registered with this CRM Email.",
-              alreadyRegistered
-            );
-          } else if (alreadyRegistered.agentMobile === agentMobile) {
-            response.error(
-              res,
-              "User already registered with this Mobile no.",
               alreadyRegistered
             );
           }
@@ -45,31 +37,10 @@ class AdminAuthController {
               userIp,
               roleId: parseInt(roleId),
               adminId: loggedInUser.id,
-              agentMobile,
             },
           });
 
-          campaigns.forEach(async (el) => {
-            await prisma.campaignAssign.create({
-              data: {
-                campaignId: el,
-                userId: newUser.id,
-              },
-            });
-          });
-
-          const assignedCampaigns = await prisma.campaign.findMany({
-            where: {
-              id: {
-                in: campaigns,
-              },
-            },
-          });
-
-          response.success(res, "User registered successfully!", {
-            ...newUser,
-            campaigns: assignedCampaigns,
-          });
+          response.success(res, "User registered successfully!", newUser);
         }
       } else {
         const newUser = await prisma.user.create({
@@ -79,7 +50,6 @@ class AdminAuthController {
             password,
             userIp,
             roleId: 1,
-            agentMobile,
           },
         });
 
@@ -126,21 +96,6 @@ class AdminAuthController {
             token: loginToken,
             userIp,
           },
-
-          include: {
-            campaigns: {
-              select: {
-                id: true,
-                campaignName: true,
-                campaignDescription: true,
-                campaignType: true,
-                callback: true,
-                dnc: true,
-                amd: true,
-                crmFields: true,
-              },
-            },
-          },
         });
 
         const allUsers = await prisma.user.findMany({
@@ -152,39 +107,9 @@ class AdminAuthController {
             username: true,
             password: true,
             email: true,
-            agentMobile: true,
             roleId: true,
           },
         });
-
-        const loginActivityAlreadyExists = await prisma.loginActivity.findFirst(
-          {
-            where: {
-              userId: updatedAdmin.id,
-            },
-          }
-        );
-
-        if (loginActivityAlreadyExists) {
-          await prisma.loginActivity.update({
-            where: {
-              id: loginActivityAlreadyExists.id,
-              userId: updatedAdmin.id,
-            },
-            data: {
-              loginTime: new Date(),
-              logoutTime: null,
-            },
-          });
-        } else {
-          await prisma.loginActivity.create({
-            data: {
-              userId: updatedAdmin.id,
-              loginTime: new Date(),
-              logoutTime: null,
-            },
-          });
-        }
 
         const menus = await getMenus(req, res, updatedAdmin);
 
@@ -198,16 +123,12 @@ class AdminAuthController {
           secure: true,
         });
 
-        // creating a session
-        session(updatedAdmin.adminId, updatedAdmin.id);
-
         response.success(res, "User logged in!", {
           ...adminDataWithoutPassword,
           users: allUsers,
           menus,
         });
       } else {
-        // res.status(400).json({ message: "Wrong password!", status: "failure" });
         response.error(res, "Wrong credentials!");
       }
     } catch (error) {
@@ -217,8 +138,7 @@ class AdminAuthController {
 
   async userUpdatePatch(req, res) {
     try {
-      const { name, email, password, agentMobile, roleId, campaigns } =
-        req.body;
+      const { name, email, password, roleId } = req.body;
 
       const { userId } = req.params;
 
@@ -231,34 +151,12 @@ class AdminAuthController {
 
       let alreadyRegistered;
 
-      if (userFound.email === email && userFound.agentMobile !== agentMobile) {
-        alreadyRegistered = await prisma.user.findFirst({
-          where: {
-            agentMobile,
-          },
-        });
-      }
-
-      if (userFound.email !== email && userFound.agentMobile === agentMobile) {
-        alreadyRegistered = await prisma.user.findFirst({
-          where: {
-            email,
-          },
-        });
-      }
-
       if (userFound) {
         if (alreadyRegistered) {
           if (alreadyRegistered.email === email) {
             response.error(
               res,
               "User already registered with this CRM Email.",
-              alreadyRegistered
-            );
-          } else if (alreadyRegistered.agentMobile === agentMobile) {
-            response.error(
-              res,
-              "User already registered with this Mobile no.",
               alreadyRegistered
             );
           }
@@ -271,74 +169,12 @@ class AdminAuthController {
               username: name,
               email,
               password,
-              agentMobile,
               roleId: parseInt(roleId),
             },
           });
 
-          // below code deals with the selectCampaigns field, check whether a new campaign has been added
-          // or a campaign has been removed and then update the campaignAssign table according to that
-
-          // find all campaigns a user has so that we can check whether a new campaign has been added or a campaign has been removed
-          const findCampaignAssign = await prisma.campaignAssign.findMany({
-            where: {
-              userId: userFound.id,
-            },
-          });
-
-          // filter id's of all the campaigns that had been assigned to user previously ()
-          const assignedCampaignIds = findCampaignAssign.map(
-            (c) => c.campaignId
-          );
-
-          // if a new campaign has been added while updating
-          if (campaigns.length > findCampaignAssign.length) {
-            // find campaigns that have not been assigned (new campaigns that were added while updating)
-            const findNotAssignedCampaigns = campaigns.filter((c) => {
-              return !assignedCampaignIds.includes(c);
-            });
-
-            findNotAssignedCampaigns.forEach(async (c) => {
-              await prisma.campaignAssign.create({
-                data: {
-                  userId: userFound.id,
-                  campaignId: c,
-                },
-              });
-            });
-          }
-
-          // if a campaign has been removed while updating
-          if (campaigns.length < findCampaignAssign.length) {
-            // find campaigns that have been removed (campaigns that were removed while updating)
-            const findRemovedCampaigns = assignedCampaignIds.filter((c) => {
-              return !campaigns.includes(c);
-            });
-
-            findRemovedCampaigns.forEach(async (c) => {
-              await prisma.campaignAssign.deleteMany({
-                where: {
-                  userId: userFound.id,
-                  campaignId: c,
-                },
-              });
-            });
-          }
-
-          const updatedAssignedCampaign = await prisma.campaign.findMany({
-            where: {
-              id: {
-                in: campaigns,
-              },
-            },
-            select: {
-              id: true,
-              campaignName: true,
-            },
-          });
-
           response.success(res, "User updated successfully!", {
-            updatedUser: { ...updatedUser, campaigns: updatedAssignedCampaign },
+            updatedUser,
           });
         }
       } else {
@@ -389,18 +225,6 @@ class AdminAuthController {
             id: true,
             email: true,
             password: true,
-            campaigns: {
-              select: {
-                id: true,
-                campaignName: true,
-                campaignDescription: true,
-                campaignType: true,
-                callback: true,
-                dnc: true,
-                amd: true,
-                crmFields: true,
-              },
-            },
           },
         });
 

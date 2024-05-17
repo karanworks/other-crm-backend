@@ -1,6 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
 const response = require("../utils/response");
-const { error } = require("console");
 const getLoggedInUser = require("../utils/getLoggedInUser");
 
 const prisma = new PrismaClient();

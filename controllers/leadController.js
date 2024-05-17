@@ -24,15 +24,7 @@ class LeadController {
               email: true,
               password: true,
               adminId: true,
-              campaigns: {
-                select: {
-                  id: true,
-                  campaignName: true,
-                  campaignDescription: true,
-                  crmFields: true,
-                  dispositions: true,
-                },
-              },
+
               leads: true,
               dropdowns: true,
             },
@@ -72,20 +64,6 @@ class LeadController {
         },
       });
 
-      //   const alreadyExists = await prisma.Lead.findFirst({
-      //     where: {
-      //       adminId: adminUser.id,
-      //       campaignName,
-      //     },
-      //   });
-
-      //   if (alreadyExists) {
-      //     response.error(
-      //       res,
-      //       "Campaign with same name already exists!",
-      //       alreadyExists
-      //     );
-      //   } else {
       const newLead = await prisma.lead.create({
         data: {
           clientName,
@@ -98,7 +76,6 @@ class LeadController {
       });
 
       response.success(res, "new lead created!", newLead);
-      //   }
     } catch (error) {
       console.log("error while creating lead ->", error);
     }

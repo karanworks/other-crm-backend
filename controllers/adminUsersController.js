@@ -2,7 +2,6 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const response = require("../utils/response");
 const getToken = require("../utils/getToken");
-const session = require("../utils/session");
 
 class AdminUsers {
   async adminUsersGet(req, res) {
@@ -38,49 +37,15 @@ class AdminUsers {
               username: true,
               password: true,
               email: true,
-              agentMobile: true,
               roleId: true,
             },
           });
 
-          const usersWithCampaigns = [];
-
-          for (const user of users) {
-            const campaignAssignments = await prisma.campaignAssign.findMany({
-              where: {
-                userId: user.id,
-              },
-              select: {
-                campaignId: true,
-              },
-            });
-
-            const campaigns = await prisma.campaign.findMany({
-              where: {
-                id: {
-                  in: campaignAssignments.map((ca) => ca.campaignId),
-                },
-              },
-            });
-
-            usersWithCampaigns.push({
-              ...user,
-              campaigns,
-            });
-          }
-
           const { password, ...adminDataWithoutPassword } = loggedInUser;
-
-          // update the session
-          const lastActiveTime = await session(
-            loggedInUser.adminId,
-            loggedInUser.id
-          );
 
           response.success(res, "Users fetched", {
             ...adminDataWithoutPassword,
-            users: usersWithCampaigns,
-            lastActiveTime,
+            users,
           });
         } else {
           response.error(res, "User not active");

@@ -11,7 +11,6 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-  
 }
 
 model User {
@@ -19,13 +18,7 @@ model User {
   username String
   email    String @unique
   password String
-  agentMobile String? @unique
   token    Int      @default(0)
-  campaigns Campaign[] 
-  ivrCampaigns IvrCampaign[]
-  numbers Number[]
-  speeches Speech[]
-  designs IvrDesign[]
   leads Lead[]
   dropdowns Dropdown[]
   invoices Invoice[]
@@ -37,100 +30,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 }
-
-model Campaign {
-  id Int @id @default(autoincrement())
-  campaignName String
-  campaignDescription String
-  campaignType String
-  callback Int @default(0)
-  dnc Int @default(0)
-  amd Int @default(0)
-  crmFields CRMField[]
-  dispositions Disposition[]
-  admin User? @relation(fields: [adminId], references: [id])
-  adminId Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-
-model CampaignAssign {
-  id Int @id @default(autoincrement())
-  campaignId Int
-  userId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-
-
-model CRMField{
-  id Int @id @default(autoincrement())
-  caption String 
-  type String
-  required Boolean
-  readOnly Boolean
-  position Int
-  campaignId Int?
-  campaign Campaign? @relation(fields: [campaignId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-
-}
-
-model IvrCampaign {
-  id Int @id @default(autoincrement())
-  ivrCampaignName String
-  ivrCampaignDescription String
-  numbers Number[]
-  speeches Speech[]
-  admin User? @relation(fields: [adminId], references: [id])
-  adminId Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-
-model IvrDesign{
-  id Int @id @default(autoincrement())
-  audioText String?
-  audioFile String?
-  key String?
-  items Json?
-  ivrCampaignId Int?
-  number Json?
-  isNumber Boolean
-  parentId Int?
-  createdBy Int?
-  admin User? @relation(fields: [createdBy], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-
-}
-
-model Number{
-  id Int @id @default(autoincrement())
-  name String
-  number String
-  department String
-  ivrCampaignId Int?
-  ivrCampaign IvrCampaign? @relation(fields: [ivrCampaignId], references: [id])
-  user User? @relation(fields: [createdBy], references: [id])
-  createdBy Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-model Speech{
-  id Int @id @default(autoincrement())
-  title String
-  speechText String?
-  speechAudio String?
-  ivrCampaignId Int?
-  ivrCampaign IvrCampaign? @relation(fields: [ivrCampaignId], references: [id])
-  user User? @relation(fields: [createdBy], references: [id])
-  createdBy Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-
 
 model Menu{
   id Int @id @default(autoincrement())
@@ -184,96 +83,6 @@ model RoleAssign{
   updatedAt DateTime @default(now())
 }
 
-model Disposition{
-  id Int @id @default(autoincrement())
-  dispositionName String
-  options String
-  campaignId Int?
-  campaign Campaign? @relation(fields: [campaignId], references: [id])
-  createdBy Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-
-
-
-model CRMFormData {
-  id Int @id @default(autoincrement())
-  addedBy Int
-  status Int
-  campaignId Int
-  disposition String
-  subDisposition String
-  col_1 String?
-  col_2 String?
-  col_3 String?
-  col_4 String?
-  col_5 String?
-  col_6 String?
-  col_7 String?
-  col_8 String?
-  col_9 String?
-  col_10 String?
-  col_11 String?
-  col_12 String?
-  col_13 String?
-  col_14 String?
-  col_15 String?
-  col_16 String?
-  col_17 String?
-  col_18 String?
-  col_19 String?
-  col_20 String?
-  col_21 String?
-  col_22 String?
-  col_23 String?
-  col_24 String?
-  col_25 String?
-  col_26 String?
-  col_27 String?
-  col_28 String?
-  col_29 String?
-  col_30 String?
-  col_31 String?
-  col_32 String?
-  col_33 String?
-  col_34 String?
-  col_35 String?
-  col_36 String?
-  col_37 String?
-  col_38 String?
-  col_39 String?
-  col_40 String?
-  col_41 String?
-  col_42 String?
-  col_43 String?
-  col_44 String?
-  col_45 String?
-  col_46 String?
-  col_47 String?
-  col_48 String?
-  col_49 String?
-  col_50 String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-
-
-model LoginActivity {
-  id Int @id @default(autoincrement())
-  userId Int
-  loginTime DateTime
-  logoutTime DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-model Session {
-  id Int @id @default(autoincrement())
-  userId Int
-  lastActive DateTime 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
 
 
 model Lead{
@@ -304,10 +113,11 @@ model Invoice{
   id Int @id @default(autoincrement())
   clientName String
   totalAmount String
-  balance String
-  paymentDate String
-  paymentAmount String
+  balance Int?
+  paymentDate String?
+  paymentAmount String?
   paymentDueDate String
+  payments Payment[]
   user User? @relation(fields: [addedBy], references: [id])
   addedBy Int
   createdAt DateTime @default(now())
@@ -315,3 +125,14 @@ model Invoice{
 }
 
 
+model Payment{
+  id Int @id @default(autoincrement())
+  invoiceId Int?
+  invoice Invoice? @relation(fields: [invoiceId], references: [id])
+  amount String
+  date String
+  user User? @relation(fields: [addedBy], references: [id])
+  addedBy Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}

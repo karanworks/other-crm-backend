@@ -2,7 +2,6 @@ const { PrismaClient } = require("@prisma/client");
 const response = require("../utils/response");
 const getMenus = require("../utils/getMenus");
 const getToken = require("../utils/getToken");
-const session = require("../utils/session");
 
 const prisma = new PrismaClient();
 
@@ -21,8 +20,6 @@ class MappingController {
         if (loggedInUser.isActive) {
           const menus = await getMenus(req, res);
 
-          // update the session
-          session(loggedInUser.adminId, loggedInUser.id);
           response.success(res, "Mapping data fetched successfully!", menus);
         } else {
           response.error(res, "User not active");
