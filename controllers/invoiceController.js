@@ -29,6 +29,7 @@ class InvoiceController {
               dropdowns: true,
               invoices: {
                 select: {
+                  id: true,
                   clientName: true,
                   totalAmount: true,
                   balance: true,
@@ -86,8 +87,8 @@ class InvoiceController {
         await prisma.payment.create({
           data: {
             invoiceId: newInvoice.id,
-            amount: paymentAmount,
-            date: paymentDate,
+            paymentAmount: paymentAmount,
+            paymentDate: paymentDate,
             addedBy: adminUser.id,
           },
         });
@@ -112,7 +113,7 @@ class InvoiceController {
 
   async invoiceUpdatePatch(req, res) {
     try {
-      const { amount, balance, paymentDate, dueDate } = req.body;
+      const { totalAmount, balance, paymentDate, paymentDueDate } = req.body;
       const { invoiceId } = req.params;
 
       const token = await getToken(req, res);
@@ -137,10 +138,10 @@ class InvoiceController {
               id: parseInt(invoiceId),
             },
             data: {
-              amount,
+              totalAmount,
               balance,
               paymentDate,
-              dueDate,
+              paymentDueDate,
             },
           });
 

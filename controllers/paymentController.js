@@ -4,9 +4,62 @@ const response = require("../utils/response");
 const getToken = require("../utils/getToken");
 
 class PaymentController {
+  async paymentsGet(req, res) {
+    try {
+      const token = await getToken(req, res);
+
+      if (token) {
+        const { isActive } = await prisma.user.findFirst({
+          where: {
+            token: parseInt(token),
+          },
+        });
+
+        if (isActive) {
+          const loggedInUser = await prisma.user.findFirst({
+            where: {
+              token: parseInt(token),
+            },
+            select: {
+              id: true,
+              email: true,
+              password: true,
+              adminId: true,
+
+              leads: true,
+              dropdowns: true,
+              invoices: {
+                select: {
+                  id: true,
+                  clientName: true,
+                  totalAmount: true,
+                  balance: true,
+                  paymentDueDate: true,
+                  payments: true,
+                },
+              },
+            },
+          });
+
+          const { password, ...adminDataWithoutPassword } = loggedInUser;
+
+          response.success(res, "Payments fetched", {
+            ...adminDataWithoutPassword,
+          });
+        } else {
+          response.error(res, "User not active!");
+        }
+      } else {
+        response.error(res, "user not already logged in.");
+      }
+    } catch (error) {
+      console.log("error while getting payments", error);
+    }
+  }
+
   async paymentCreatePost(req, res) {
     try {
-      const { amount, date } = req.body;
+      const { paymentAmount, paymentDate } = req.body;
       const { invoiceId } = req.params;
 
       const token = await getToken(req, res);
@@ -19,13 +72,39 @@ class PaymentController {
 
       const newPayment = await prisma.payment.create({
         data: {
-          amount,
-          date,
-          invoiceId,
+          paymentAmount,
+          paymentDate,
+          invoiceId: parseInt(invoiceId),
           addedBy: adminUser.id,
         },
       });
 
+      const invoice = await prisma.invoice.findFirst({
+        where: {
+          id: parseInt(invoiceId),
+        },
+      });
+
+      const invoicePayments = await prisma.payment.findMany({
+        where: {
+          invoiceId: parseInt(invoiceId),
+        },
+      });
+
+      const totalPaidAmount = invoicePayments?.reduce((acc, curr) => {
+        return acc + parseInt(curr.paymentAmount);
+      }, 0);
+
+      if (invoice) {
+        await prisma.invoice.update({
+          where: {
+            id: parseInt(invoiceId),
+          },
+          data: {
+            balance: invoice.totalAmount - totalPaidAmount,
+          },
+        });
+      }
       response.success(res, "new payment created!", newPayment);
     } catch (error) {
       console.log("error while creating payment ->", error);
@@ -34,7 +113,7 @@ class PaymentController {
 
   async paymentUpdatePatch(req, res) {
     try {
-      const { amount, date } = req.body;
+      const { paymentAmount, paymentDate } = req.body;
       const { paymentId, invoiceId } = req.params;
 
       const token = await getToken(req, res);
@@ -45,7 +124,6 @@ class PaymentController {
         },
       });
 
-      // finding campaign from id
       const paymentFound = await prisma.payment.findFirst({
         where: {
           id: parseInt(paymentId),
@@ -60,10 +138,37 @@ class PaymentController {
               id: parseInt(paymentId),
             },
             data: {
-              amount,
-              date,
+              paymentAmount,
+              paymentDate,
             },
           });
+
+          const invoice = await prisma.invoice.findFirst({
+            where: {
+              id: parseInt(invoiceId),
+            },
+          });
+
+          const invoicePayments = await prisma.payment.findMany({
+            where: {
+              invoiceId: parseInt(invoiceId),
+            },
+          });
+
+          const totalPaidAmount = invoicePayments?.reduce((acc, curr) => {
+            return acc + parseInt(curr.paymentAmount);
+          }, 0);
+
+          if (invoice) {
+            await prisma.invoice.update({
+              where: {
+                id: parseInt(invoiceId),
+              },
+              data: {
+                balance: invoice.totalAmount - totalPaidAmount,
+              },
+            });
+          }
 
           response.success(res, "Payment updated successfully", {
             updatedPayment,
