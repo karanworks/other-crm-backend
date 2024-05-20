@@ -26,15 +26,29 @@ class LeadController {
               adminId: true,
               roleId: true,
               leads: true,
-              dropdowns: true,
+              // dropdowns: true,
             },
           });
 
+          const dropdowns = await prisma.dropdown.findMany({});
+
           const { password, ...adminDataWithoutPassword } = loggedInUser;
 
-          response.success(res, "Leads fetched", {
-            ...adminDataWithoutPassword,
-          });
+          // if user is admin return all leads
+          if (loggedInUser.roleId === 1) {
+            const allLeads = await prisma.lead.findMany({});
+
+            response.success(res, "Leads fetched", {
+              ...adminDataWithoutPassword,
+              dropdowns,
+              leads: allLeads,
+            });
+          } else {
+            response.success(res, "Leads fetched", {
+              ...adminDataWithoutPassword,
+              dropdowns,
+            });
+          }
         } else {
           response.error(res, "User not active!");
         }
