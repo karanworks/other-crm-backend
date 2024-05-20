@@ -84,8 +84,6 @@ model RoleAssign{
   updatedAt DateTime @default(now())
 }
 
-
-
 model Lead{
     id Int @id @default(autoincrement())
     clientName String

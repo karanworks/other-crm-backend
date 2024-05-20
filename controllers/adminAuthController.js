@@ -40,6 +40,14 @@ class AdminAuthController {
             },
           });
 
+          // Assigning role
+          await prisma.roleAssign.create({
+            data: {
+              roleId,
+              userId: newUser.id,
+            },
+          });
+
           response.success(res, "User registered successfully!", newUser);
         }
       } else {
@@ -53,6 +61,13 @@ class AdminAuthController {
           },
         });
 
+        // Assigning role
+        await prisma.roleAssign.create({
+          data: {
+            roleId: 1,
+            userId: newUser.id,
+          },
+        });
         response.success(res, "User registered successfully!", newUser);
       }
     } catch (error) {

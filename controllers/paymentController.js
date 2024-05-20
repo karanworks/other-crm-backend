@@ -7,6 +7,7 @@ class PaymentController {
   async paymentsGet(req, res) {
     try {
       const token = await getToken(req, res);
+      const { invoiceId } = req.params;
 
       if (token) {
         const { isActive } = await prisma.user.findFirst({
@@ -29,16 +30,22 @@ class PaymentController {
 
               leads: true,
               dropdowns: true,
-              invoices: {
-                select: {
-                  id: true,
-                  clientName: true,
-                  totalAmount: true,
-                  balance: true,
-                  paymentDueDate: true,
-                  payments: true,
-                },
-              },
+              // invoices: {
+              //   select: {
+              //     id: true,
+              //     clientName: true,
+              //     totalAmount: true,
+              //     balance: true,
+              //     paymentDueDate: true,
+              //     payments: true,
+              //   },
+              // },
+            },
+          });
+
+          const invoicePayments = await prisma.payment.findMany({
+            where: {
+              invoiceId: parseInt(invoiceId),
             },
           });
 
@@ -46,6 +53,7 @@ class PaymentController {
 
           response.success(res, "Payments fetched", {
             ...adminDataWithoutPassword,
+            invoicePayments,
           });
         } else {
           response.error(res, "User not active!");
