@@ -275,24 +275,6 @@ class AdminAuthController {
           },
         });
 
-        const loginActivity = await prisma.loginActivity.findFirst({
-          where: {
-            userId: loggedInUser.id,
-          },
-        });
-
-        if (loginActivity) {
-          // update logout time
-          await prisma.loginActivity.update({
-            where: {
-              id: loginActivity.id,
-            },
-            data: {
-              logoutTime: new Date(),
-            },
-          });
-        }
-
         res.clearCookie("token");
         response.success(res, "User logged out successflly!");
       } else {
