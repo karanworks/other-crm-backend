@@ -168,19 +168,18 @@ class PaymentController {
             return acc + parseInt(curr.paymentAmount);
           }, 0);
 
-          if (invoice) {
-            await prisma.invoice.update({
-              where: {
-                id: parseInt(invoiceId),
-              },
-              data: {
-                balance: invoice.totalAmount - totalPaidAmount,
-              },
-            });
-          }
+          const updatedInvoiceWithBalance = await prisma.invoice.update({
+            where: {
+              id: parseInt(invoiceId),
+            },
+            data: {
+              balance: invoice.totalAmount - totalPaidAmount,
+            },
+          });
 
           response.success(res, "Payment updated successfully", {
             updatedPayment,
+            invoiceBalance: updatedInvoiceWithBalance.balance,
           });
         } else {
           response.error(res, "Payment not found!");
@@ -207,6 +206,23 @@ class PaymentController {
         const deletedPayment = await prisma.payment.delete({
           where: {
             id: parseInt(paymentId),
+          },
+        });
+
+        const invoice = await prisma.invoice.findFirst({
+          where: {
+            id: parseInt(deletedPayment.invoiceId),
+          },
+        });
+
+        await prisma.invoice.update({
+          where: {
+            id: parseInt(deletedPayment.invoiceId),
+          },
+          data: {
+            balance:
+              parseInt(invoice.balance) +
+              parseInt(deletedPayment.paymentAmount),
           },
         });
 
