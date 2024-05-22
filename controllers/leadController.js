@@ -25,8 +25,11 @@ class LeadController {
               password: true,
               adminId: true,
               roleId: true,
-              leads: true,
-              // dropdowns: true,
+              leads: {
+                include: {
+                  events: true,
+                },
+              },
             },
           });
 
@@ -36,7 +39,11 @@ class LeadController {
 
           // if user is admin return all leads
           if (loggedInUser.roleId === 1) {
-            const allLeads = await prisma.lead.findMany({});
+            const allLeads = await prisma.lead.findMany({
+              include: {
+                events: true,
+              },
+            });
 
             response.success(res, "Leads fetched", {
               ...adminDataWithoutPassword,

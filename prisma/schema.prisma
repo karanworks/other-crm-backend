@@ -86,11 +86,12 @@ model RoleAssign{
 
 model Lead{
     id Int @id @default(autoincrement())
-    clientName String
+    clientName String @unique
     projectGenre String
     projectStatus String
     projectDueDate String
     youtubeLink String?
+    events Event[]
     user User? @relation(fields: [addedBy], references: [id])
     addedBy Int
     createdAt DateTime @default(now())
@@ -110,7 +111,7 @@ model Dropdown{
 
 model Invoice{
   id Int @id @default(autoincrement())
-  clientName String
+  clientName String @unique
   totalAmount String
   balance Int?
   paymentDate String?
@@ -132,6 +133,17 @@ model Payment{
   paymentDate String
   user User? @relation(fields: [addedBy], references: [id])
   addedBy Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model Event{
+  id Int @id @default(autoincrement())
+  eventName String
+  eventDate String
+  clientNameOfEvent String
+  lead Lead? @relation(fields: [clientNameOfEvent], references: [clientName])
+  addedBy Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 }
