@@ -16,6 +16,8 @@ class EventController {
           },
         });
 
+        const allEvents = await prisma.event.findMany({});
+
         const leadEvents = await prisma.event.findMany({
           where: {
             clientNameOfEvent: clientName,
@@ -25,6 +27,7 @@ class EventController {
         if (isActive) {
           response.success(res, "Events fetched", {
             leadEvents,
+            allEvents,
           });
         } else {
           response.error(res, "User not active!");
