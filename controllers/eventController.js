@@ -58,6 +58,7 @@ class EventController {
         const newEvents = [];
 
         for (const event of events) {
+          console.log("EVENT IN LOOP ->", event);
           const newEvent = await prisma.event.create({
             data: {
               eventName: event.eventName,
@@ -134,8 +135,6 @@ class EventController {
   async eventRemoveDelete(req, res) {
     try {
       const { eventId } = req.params;
-
-      console.log("REMOVE EVENT API CALLED ->", eventId);
 
       const eventFound = await prisma.event.findFirst({
         where: {
