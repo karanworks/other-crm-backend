@@ -84,19 +84,6 @@ model RoleAssign{
   updatedAt DateTime @default(now())
 }
 
-model Lead{
-    id Int @id @default(autoincrement())
-    clientName String @unique
-    projectGenre String
-    projectStatus String
-    projectDueDate String
-    youtubeLink String?
-    events Event[]
-    user User? @relation(fields: [addedBy], references: [id])
-    addedBy Int
-    createdAt DateTime @default(now())
-    updatedAt DateTime @default(now())
-}
 
 
 model Dropdown{
@@ -137,12 +124,27 @@ model Payment{
   updatedAt DateTime @default(now())
 }
 
+
+model Lead{
+    id Int @id @default(autoincrement())
+    clientName String 
+    mobileNo String @unique
+    projectGenre String
+    projectStatus String
+    projectDueDate String
+    youtubeLink String?
+    user User? @relation(fields: [addedBy], references: [id])
+    addedBy Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+}
+
 model Event{
   id Int @id @default(autoincrement())
+  clientName String
   eventName String
   eventDate String
-  clientNameOfEvent String
-  lead Lead? @relation(fields: [clientNameOfEvent], references: [clientName])
+  leadMobileNo String
   addedBy Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())

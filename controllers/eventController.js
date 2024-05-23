@@ -6,7 +6,7 @@ const getToken = require("../utils/getToken");
 class EventController {
   async eventsGet(req, res) {
     try {
-      const { clientName } = req.params;
+      const { leadMobileNo } = req.params;
       const token = await getToken(req, res);
 
       if (token) {
@@ -20,7 +20,7 @@ class EventController {
 
         const leadEvents = await prisma.event.findMany({
           where: {
-            clientNameOfEvent: clientName,
+            leadMobileNo,
           },
         });
 
@@ -44,8 +44,6 @@ class EventController {
     try {
       const { events } = req.body;
 
-      console.log("EVENTS WHILE CREATING ->", events);
-
       const token = await getToken(req, res);
 
       const adminUser = await prisma.user.findFirst({
@@ -58,25 +56,29 @@ class EventController {
         const newEvents = [];
 
         for (const event of events) {
-          console.log("EVENT IN LOOP ->", event);
           const newEvent = await prisma.event.create({
             data: {
               eventName: event.eventName,
               eventDate: event.eventDate,
-              clientNameOfEvent: event.clientName,
+              clientName: event.clientName,
+              leadMobileNo: event.leadMobileNo,
               addedBy: adminUser.id,
             },
           });
+
           newEvents.push(newEvent);
         }
 
         response.success(res, "new event created!", newEvents);
       } else {
+        console.log("EVENTS WHILE CREATING ->", events);
+
         const newEvent = await prisma.event.create({
           data: {
             eventName: events.eventName,
             eventDate: events.eventDate,
-            clientNameOfEvent: events.clientName,
+            clientName: events.clientName,
+            leadMobileNo: events.leadMobileNo,
             addedBy: adminUser.id,
           },
         });

@@ -25,13 +25,36 @@ class LeadController {
               password: true,
               adminId: true,
               roleId: true,
-              leads: {
-                include: {
-                  events: true,
-                },
-              },
+              // leads: true,
+              // leads: {
+              //   include: {
+              //     events: true,
+              //   },
+              // },
             },
           });
+
+          const userLeads = await prisma.lead.findMany({
+            where: {
+              addedBy: loggedInUser.id,
+            },
+          });
+
+          const leadsWithEvents = await Promise.all(
+            userLeads.map(async (lead) => {
+              const leadEvents = await prisma.event.findMany({
+                where: {
+                  leadMobileNo: lead.mobileNo,
+                },
+              });
+
+              if (leadEvents.length === 0) {
+                return lead;
+              } else {
+                return { ...lead, events: leadEvents };
+              }
+            })
+          );
 
           const dropdowns = await prisma.dropdown.findMany({});
 
@@ -39,21 +62,34 @@ class LeadController {
 
           // if user is admin return all leads
           if (loggedInUser.roleId === 1) {
-            const allLeads = await prisma.lead.findMany({
-              include: {
-                events: true,
-              },
-            });
+            const allLeads = await prisma.lead.findMany({});
+
+            const allLeadsWithEvents = await Promise.all(
+              allLeads?.map(async (lead) => {
+                const leadEvents = await prisma.event.findMany({
+                  where: {
+                    leadMobileNo: lead.mobileNo,
+                  },
+                });
+
+                if (leadEvents.length === 0) {
+                  return lead;
+                } else {
+                  return { ...lead, events: leadEvents };
+                }
+              })
+            );
 
             response.success(res, "Leads fetched", {
               ...adminDataWithoutPassword,
               dropdowns,
-              leads: allLeads,
+              leads: allLeadsWithEvents,
             });
           } else {
             response.success(res, "Leads fetched", {
               ...adminDataWithoutPassword,
               dropdowns,
+              leads: leadsWithEvents,
             });
           }
         } else {
@@ -71,6 +107,7 @@ class LeadController {
     try {
       const {
         clientName,
+        mobileNo,
         projectGenre,
         projectStatus,
         projectDueDate,
@@ -88,6 +125,7 @@ class LeadController {
       const newLead = await prisma.lead.create({
         data: {
           clientName,
+          mobileNo,
           projectGenre,
           projectStatus,
           projectDueDate,
@@ -106,6 +144,7 @@ class LeadController {
     try {
       const {
         clientName,
+        mobileNo,
         projectGenre,
         projectStatus,
         youtubeLink,
@@ -136,6 +175,7 @@ class LeadController {
             },
             data: {
               clientName,
+              mobileNo,
               projectGenre,
               projectStatus,
               projectDueDate,
@@ -167,12 +207,27 @@ class LeadController {
         },
       });
 
+      const leadEvents = await prisma.event.findMany({
+        where: {
+          leadMobileNo: leadFound.mobileNo,
+        },
+      });
+
       if (leadFound) {
         const deletedLead = await prisma.lead.delete({
           where: {
             id: parseInt(leadId),
           },
         });
+
+        if (leadEvents.length !== 0) {
+          // delete all events
+          await prisma.event.deleteMany({
+            where: {
+              leadMobileNo: leadFound.mobileNo,
+            },
+          });
+        }
 
         response.success(res, "Lead deleted successfully!", {
           deletedLead,
