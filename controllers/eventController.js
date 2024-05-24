@@ -16,11 +16,16 @@ class EventController {
           },
         });
 
-        const allEvents = await prisma.event.findMany({});
+        const allEvents = await prisma.event.findMany({
+          where: {
+            status: 1,
+          },
+        });
 
         const leadEvents = await prisma.event.findMany({
           where: {
             leadMobileNo,
+            status: 1,
           },
         });
 
@@ -62,6 +67,7 @@ class EventController {
               eventDate: event.eventDate,
               clientName: event.clientName,
               leadMobileNo: event.leadMobileNo,
+              status: 1,
               addedBy: adminUser.id,
             },
           });
@@ -79,6 +85,7 @@ class EventController {
             eventDate: events.eventDate,
             clientName: events.clientName,
             leadMobileNo: events.leadMobileNo,
+            status: 1,
             addedBy: adminUser.id,
           },
         });
@@ -92,7 +99,7 @@ class EventController {
 
   async eventUpdatePatch(req, res) {
     try {
-      const { eventName, eventDate } = req.body;
+      const { eventName, eventDate, status } = req.body;
       const { eventId } = req.params;
 
       const token = await getToken(req, res);
@@ -111,19 +118,34 @@ class EventController {
 
       if (adminUser) {
         if (eventFound) {
-          const updatedEvent = await prisma.event.update({
-            where: {
-              id: parseInt(eventId),
-            },
-            data: {
-              eventName,
-              eventDate,
-            },
-          });
+          if (status === 0) {
+            const updatedEvent = await prisma.event.update({
+              where: {
+                id: parseInt(eventId),
+              },
+              data: {
+                status,
+              },
+            });
 
-          response.success(res, "Event updated successfully", {
-            updatedEvent,
-          });
+            response.success(res, "Event deleted successfully", {
+              updatedEvent,
+            });
+          } else {
+            const updatedEvent = await prisma.event.update({
+              where: {
+                id: parseInt(eventId),
+              },
+              data: {
+                eventName,
+                eventDate,
+              },
+            });
+
+            response.success(res, "Event updated successfully", {
+              updatedEvent,
+            });
+          }
         } else {
           response.error(res, "Event not found!");
         }
@@ -134,33 +156,33 @@ class EventController {
       console.log("error while updating event ", error);
     }
   }
-  async eventRemoveDelete(req, res) {
-    try {
-      const { eventId } = req.params;
+  // async eventRemoveDelete(req, res) {
+  //   try {
+  //     const { eventId } = req.params;
 
-      const eventFound = await prisma.event.findFirst({
-        where: {
-          id: parseInt(eventId),
-        },
-      });
+  //     const eventFound = await prisma.event.findFirst({
+  //       where: {
+  //         id: parseInt(eventId),
+  //       },
+  //     });
 
-      if (eventFound) {
-        const deletedEvent = await prisma.event.delete({
-          where: {
-            id: parseInt(eventId),
-          },
-        });
+  //     if (eventFound) {
+  //       const deletedEvent = await prisma.event.delete({
+  //         where: {
+  //           id: parseInt(eventId),
+  //         },
+  //       });
 
-        response.success(res, "Event deleted successfully!", {
-          deletedEvent,
-        });
-      } else {
-        response.error(res, "Event does not exist!");
-      }
-    } catch (error) {
-      console.log("error while deleting event ", error);
-    }
-  }
+  //       response.success(res, "Event deleted successfully!", {
+  //         deletedEvent,
+  //       });
+  //     } else {
+  //       response.error(res, "Event does not exist!");
+  //     }
+  //   } catch (error) {
+  //     console.log("error while deleting event ", error);
+  //   }
+  // }
 }
 
 module.exports = new EventController();

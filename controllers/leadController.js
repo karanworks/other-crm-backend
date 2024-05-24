@@ -37,6 +37,7 @@ class LeadController {
           const userLeads = await prisma.lead.findMany({
             where: {
               addedBy: loggedInUser.id,
+              status: 1,
             },
           });
 
@@ -45,6 +46,7 @@ class LeadController {
               const leadEvents = await prisma.event.findMany({
                 where: {
                   leadMobileNo: lead.mobileNo,
+                  status: 1,
                 },
               });
 
@@ -62,13 +64,18 @@ class LeadController {
 
           // if user is admin return all leads
           if (loggedInUser.roleId === 1) {
-            const allLeads = await prisma.lead.findMany({});
+            const allLeads = await prisma.lead.findMany({
+              where: {
+                status: 1,
+              },
+            });
 
             const allLeadsWithEvents = await Promise.all(
               allLeads?.map(async (lead) => {
                 const leadEvents = await prisma.event.findMany({
                   where: {
                     leadMobileNo: lead.mobileNo,
+                    status: 1,
                   },
                 });
 
@@ -130,6 +137,7 @@ class LeadController {
           projectStatus,
           projectDueDate,
           youtubeLink,
+          status: 1,
           addedBy: adminUser.id,
         },
       });
@@ -149,6 +157,7 @@ class LeadController {
         projectStatus,
         youtubeLink,
         projectDueDate,
+        status,
       } = req.body;
       const { leadId } = req.params;
 
@@ -169,23 +178,56 @@ class LeadController {
 
       if (adminUser) {
         if (leadFound) {
-          const updatedLead = await prisma.lead.update({
-            where: {
-              id: parseInt(leadId),
-            },
-            data: {
-              clientName,
-              mobileNo,
-              projectGenre,
-              projectStatus,
-              projectDueDate,
-              youtubeLink,
-            },
-          });
+          if (status === 0) {
+            const updatedLead = await prisma.lead.update({
+              where: {
+                id: parseInt(leadId),
+              },
+              data: {
+                status,
+              },
+            });
 
-          response.success(res, "Lead updated successfully", {
-            updatedLead,
-          });
+            const leadEvents = await prisma.event.findMany({
+              where: {
+                leadMobileNo: leadFound.mobileNo,
+              },
+            });
+
+            if (leadEvents.length !== 0) {
+              // delete all events
+              await prisma.event.updateMany({
+                where: {
+                  leadMobileNo: leadFound.mobileNo,
+                },
+                data: {
+                  status,
+                },
+              });
+            }
+
+            response.success(res, "Lead deleted successfully", {
+              updatedLead,
+            });
+          } else {
+            const updatedLead = await prisma.lead.update({
+              where: {
+                id: parseInt(leadId),
+              },
+              data: {
+                clientName,
+                mobileNo,
+                projectGenre,
+                projectStatus,
+                projectDueDate,
+                youtubeLink,
+              },
+            });
+
+            response.success(res, "Lead updated successfully", {
+              updatedLead,
+            });
+          }
         } else {
           response.error(res, "Lead not found!");
         }
