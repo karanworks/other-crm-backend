@@ -8,7 +8,7 @@ const getToken = require("../utils/getToken");
 class AdminAuthController {
   async userRegisterPost(req, res) {
     try {
-      const { name, email, password, roleId } = req.body;
+      const { name, email, password, roleId, branchId } = req.body;
       const userIp = req.socket.remoteAddress;
 
       const loggedInUser = await getLoggedInUser(req, res);
@@ -16,6 +16,12 @@ class AdminAuthController {
       const alreadyRegistered = await prisma.user.findFirst({
         where: {
           OR: [{ email }],
+        },
+      });
+
+      const branch = await prisma.branchDropdown.findFirst({
+        where: {
+          id: parseInt(branchId),
         },
       });
 
@@ -35,6 +41,7 @@ class AdminAuthController {
               email,
               password,
               userIp,
+              branch: branch.branchDropdownName,
               roleId: parseInt(roleId),
               adminId: loggedInUser.id,
             },
@@ -43,7 +50,7 @@ class AdminAuthController {
           // Assigning role
           await prisma.roleAssign.create({
             data: {
-              roleId,
+              roleId: parseInt(roleId),
               userId: newUser.id,
             },
           });
@@ -90,10 +97,10 @@ class AdminAuthController {
         response.error(res, "No user found with this email!");
       } else if (password === userFound.password) {
         // checking if user is active to prevent him logging again
-        if (userFound.isActive) {
-          response.error(res, "You were not logged out properly!");
-          return;
-        }
+        // if (userFound.isActive) {
+        //   response.error(res, "You were not logged out properly!");
+        //   return;
+        // }
 
         // generates a number between 1000 and 10000 to be used as token
         const loginToken = Math.floor(
@@ -122,6 +129,7 @@ class AdminAuthController {
             username: true,
             password: true,
             email: true,
+            branch: true,
             roleId: true,
           },
         });
@@ -138,6 +146,14 @@ class AdminAuthController {
           secure: true,
         });
 
+        // res.cookie("token", loginToken, {
+        //   expires: expirationDate,
+        //   httpOnly: true,
+        //   secure: true,
+        //   domain: "https://vickyvox.in",
+        //   path: "/",
+        // });
+
         response.success(res, "User logged in!", {
           ...adminDataWithoutPassword,
           users: allUsers,
@@ -153,7 +169,7 @@ class AdminAuthController {
 
   async userUpdatePatch(req, res) {
     try {
-      const { name, email, password, roleId } = req.body;
+      const { name, email, password, roleId, branchId } = req.body;
 
       const { userId } = req.params;
 
@@ -161,6 +177,12 @@ class AdminAuthController {
       const userFound = await prisma.user.findFirst({
         where: {
           id: parseInt(userId),
+        },
+      });
+
+      const branch = await prisma.branchDropdown.findFirst({
+        where: {
+          id: parseInt(branchId),
         },
       });
 
@@ -184,6 +206,7 @@ class AdminAuthController {
               username: name,
               email,
               password,
+              branch: branch.branchDropdownName,
               roleId: parseInt(roleId),
             },
           });
@@ -253,6 +276,7 @@ class AdminAuthController {
             password: true,
             email: true,
             agentMobile: true,
+            branch: true,
             roleId: true,
           },
         });

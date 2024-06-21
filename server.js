@@ -13,6 +13,7 @@ const dropdownRouter = require("./routes/dropdown");
 const invoiceRouter = require("./routes/invoice");
 const paymentRouter = require("./routes/payment");
 const eventRouter = require("./routes/event");
+const branchDropdownRouter = require("./routes/branchDropdown");
 
 // cookie parser
 const cookieParser = require("cookie-parser");
@@ -27,6 +28,7 @@ app.use(
     origin: "http://localhost:3002",
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
+    exposedHeaders: ["set-cookie"],
   })
 );
 
@@ -56,6 +58,7 @@ app.use("/", dropdownRouter);
 app.use("/", invoiceRouter);
 app.use("/", paymentRouter);
 app.use("/", eventRouter);
+app.use("/", branchDropdownRouter);
 
 app.listen(process.env.PORT || 3003, () => {
   console.log(`Server listening at port no -> ${process.env.PORT}`);
