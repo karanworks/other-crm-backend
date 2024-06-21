@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 const response = require("../utils/response");
 const getToken = require("../utils/getToken");
 class LeadController {
-  async leadsGet(req, res) {
+  async tasksGet(req, res) {
     try {
       const token = await getToken(req, res);
 
@@ -35,6 +35,33 @@ class LeadController {
             },
           });
 
+          const leadsWithEvents = await Promise.all(
+            userLeads.map(async (lead) => {
+              const leadEvents = await prisma.event.findMany({
+                where: {
+                  leadMobileNo: lead.mobileNo,
+                  status: 1,
+                },
+              });
+
+              const addedBy = await prisma.user.findFirst({
+                where: {
+                  id: parseInt(lead.addedBy),
+                },
+              });
+
+              if (leadEvents.length === 0) {
+                return { ...lead, addedBy };
+              } else {
+                return {
+                  ...lead,
+                  events: leadEvents,
+                  addedBy,
+                };
+              }
+            })
+          );
+
           const dropdowns = await prisma.dropdown.findMany({});
 
           const { password, ...adminDataWithoutPassword } = loggedInUser;
@@ -47,16 +74,43 @@ class LeadController {
               },
             });
 
+            const allLeadsWithEvents = await Promise.all(
+              allLeads?.map(async (lead) => {
+                const leadEvents = await prisma.event.findMany({
+                  where: {
+                    leadMobileNo: lead.mobileNo,
+                    status: 1,
+                  },
+                });
+
+                const addedBy = await prisma.user.findFirst({
+                  where: {
+                    id: parseInt(lead.addedBy),
+                  },
+                });
+
+                if (leadEvents.length === 0) {
+                  return { ...lead, addedBy };
+                } else {
+                  return {
+                    ...lead,
+                    events: leadEvents,
+                    addedBy,
+                  };
+                }
+              })
+            );
+
             response.success(res, "Leads fetched", {
               ...adminDataWithoutPassword,
               dropdowns,
-              leads: allLeads,
+              leads: allLeadsWithEvents,
             });
           } else {
             response.success(res, "Leads fetched", {
               ...adminDataWithoutPassword,
               dropdowns,
-              leads: userLeads,
+              leads: leadsWithEvents,
             });
           }
         } else {
@@ -70,7 +124,7 @@ class LeadController {
     }
   }
 
-  async leadCreatePost(req, res) {
+  async taskCreatePost(req, res) {
     try {
       const {
         clientName,
@@ -120,7 +174,7 @@ class LeadController {
     }
   }
 
-  async leadUpdatePatch(req, res) {
+  async taskUpdatePatch(req, res) {
     try {
       const { clientName, mobileNo, address, status } = req.body;
       const { leadId } = req.params;
@@ -151,6 +205,24 @@ class LeadController {
                 status,
               },
             });
+
+            const leadEvents = await prisma.event.findMany({
+              where: {
+                leadMobileNo: leadFound.mobileNo,
+              },
+            });
+
+            if (leadEvents.length !== 0) {
+              // delete all events
+              await prisma.event.updateMany({
+                where: {
+                  leadMobileNo: leadFound.mobileNo,
+                },
+                data: {
+                  status,
+                },
+              });
+            }
 
             response.success(res, "Lead deleted successfully", {
               updatedLead,
