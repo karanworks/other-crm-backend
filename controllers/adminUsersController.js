@@ -37,6 +37,7 @@ class AdminUsers {
               username: true,
               password: true,
               email: true,
+              branch: true,
               roleId: true,
             },
           });

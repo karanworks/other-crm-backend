@@ -25,12 +25,6 @@ class LeadController {
               password: true,
               adminId: true,
               roleId: true,
-              // leads: true,
-              // leads: {
-              //   include: {
-              //     events: true,
-              //   },
-              // },
             },
           });
 
@@ -50,10 +44,20 @@ class LeadController {
                 },
               });
 
+              const addedBy = await prisma.user.findFirst({
+                where: {
+                  id: parseInt(lead.addedBy),
+                },
+              });
+
               if (leadEvents.length === 0) {
-                return lead;
+                return { ...lead, addedBy };
               } else {
-                return { ...lead, events: leadEvents };
+                return {
+                  ...lead,
+                  events: leadEvents,
+                  addedBy,
+                };
               }
             })
           );
@@ -79,10 +83,20 @@ class LeadController {
                   },
                 });
 
+                const addedBy = await prisma.user.findFirst({
+                  where: {
+                    id: parseInt(lead.addedBy),
+                  },
+                });
+
                 if (leadEvents.length === 0) {
-                  return lead;
+                  return { ...lead, addedBy };
                 } else {
-                  return { ...lead, events: leadEvents };
+                  return {
+                    ...lead,
+                    events: leadEvents,
+                    addedBy,
+                  };
                 }
               })
             );
@@ -119,7 +133,12 @@ class LeadController {
         projectStatus,
         projectDueDate,
         youtubeLink,
+        address,
+        description,
+        task,
       } = req.body;
+
+      console.log("CREATING LEAD BODY ->", req.body);
 
       const token = await getToken(req, res);
 
@@ -137,6 +156,9 @@ class LeadController {
           projectStatus,
           projectDueDate,
           youtubeLink,
+          address,
+          description,
+          task,
           status: 1,
           addedBy: adminUser.id,
         },
@@ -224,8 +246,14 @@ class LeadController {
               },
             });
 
+            const addedBy = await prisma.user.findFirst({
+              where: {
+                id: parseInt(updatedLead.addedBy),
+              },
+            });
+
             response.success(res, "Lead updated successfully", {
-              updatedLead,
+              updatedLead: { ...updatedLead, addedBy },
             });
           }
         } else {

@@ -77,8 +77,6 @@ class EventController {
 
         response.success(res, "new event created!", newEvents);
       } else {
-        console.log("EVENTS WHILE CREATING ->", events);
-
         const newEvent = await prisma.event.create({
           data: {
             eventName: events.eventName,

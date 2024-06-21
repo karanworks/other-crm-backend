@@ -96,6 +96,8 @@ model Dropdown{
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 }
+
+
 model BranchDropdown{
   id Int @id @default(autoincrement())
   branchDropdownName String
@@ -141,6 +143,9 @@ model Lead{
     projectStatus String
     projectDueDate String
     youtubeLink String?
+    address String
+    task String
+    description String
     status Int?
     user User? @relation(fields: [addedBy], references: [id])
     addedBy Int
