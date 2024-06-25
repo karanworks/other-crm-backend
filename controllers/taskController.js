@@ -26,7 +26,9 @@ class TaskController {
         // if user is admin return all leads
         if (loggedInUser.roleId === 1) {
           const allClientTasks = await prisma.task.findMany({
-            where: {},
+            where: {
+              status: 1,
+            },
           });
 
           const allClientTasksWithAddedBy = await Promise.all(
@@ -52,6 +54,7 @@ class TaskController {
           const clientTasks = await prisma.task.findMany({
             where: {
               addedBy: parseInt(loggedInUser.id),
+              status: 1,
             },
           });
 
