@@ -6,16 +6,10 @@ const getToken = require("../utils/getToken");
 class EventController {
   async eventsGet(req, res) {
     try {
-      const { mobileNo } = req.params;
+      const { taskId } = req.params;
       const token = await getToken(req, res);
 
       if (token) {
-        const { isActive } = await prisma.user.findFirst({
-          where: {
-            token: parseInt(token),
-          },
-        });
-
         const allEvents = await prisma.event.findMany({
           where: {
             status: 1,
@@ -24,19 +18,15 @@ class EventController {
 
         const leadEvents = await prisma.event.findMany({
           where: {
-            mobileNo,
+            taskId: parseInt(taskId),
             status: 1,
           },
         });
 
-        if (isActive) {
-          response.success(res, "Events fetched", {
-            leadEvents,
-            allEvents,
-          });
-        } else {
-          response.error(res, "User not active!");
-        }
+        response.success(res, "Events fetched", {
+          leadEvents,
+          allEvents,
+        });
       } else {
         response.error(res, "user not already logged in.");
       }
@@ -47,7 +37,7 @@ class EventController {
 
   async eventCreatePost(req, res) {
     try {
-      const { events } = req.body;
+      const { event } = req.body;
 
       const token = await getToken(req, res);
 
@@ -57,39 +47,17 @@ class EventController {
         },
       });
 
-      if (Array.isArray(events)) {
-        const newEvents = [];
+      const newEvent = await prisma.event.create({
+        data: {
+          eventName: event.eventName,
+          eventDate: event.eventDate,
+          clientId: event.clientId,
+          taskId: event.taskId,
+          addedBy: adminUser.id,
+        },
+      });
 
-        for (const event of events) {
-          const newEvent = await prisma.event.create({
-            data: {
-              eventName: event.eventName,
-              eventDate: event.eventDate,
-              clientName: event.clientName,
-              leadMobileNo: event.leadMobileNo,
-              status: 1,
-              addedBy: adminUser.id,
-            },
-          });
-
-          newEvents.push(newEvent);
-        }
-
-        response.success(res, "new event created!", newEvents);
-      } else {
-        const newEvent = await prisma.event.create({
-          data: {
-            eventName: events.eventName,
-            eventDate: events.eventDate,
-            clientName: events.clientName,
-            leadMobileNo: events.leadMobileNo,
-            status: 1,
-            addedBy: adminUser.id,
-          },
-        });
-
-        response.success(res, "new event created!", newEvent);
-      }
+      response.success(res, "new event created!", newEvent);
     } catch (error) {
       console.log("error while creating event ->", error);
     }

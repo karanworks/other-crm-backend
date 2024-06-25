@@ -126,8 +126,16 @@ class TaskController {
 
   async taskUpdatePatch(req, res) {
     try {
-      const { clientName, mobileNo, address, status } = req.body;
-      const { leadId } = req.params;
+      const {
+        taskName,
+        projectGenre,
+        projectStatus,
+        projectDueDate,
+        youtubeLink,
+        description,
+        status,
+      } = req.body;
+      const { taskId } = req.params;
 
       const token = await getToken(req, res);
 
@@ -137,36 +145,35 @@ class TaskController {
         },
       });
 
-      // finding campaign from id
-      const leadFound = await prisma.lead.findFirst({
+      const taskFound = await prisma.task.findFirst({
         where: {
-          id: parseInt(leadId),
+          id: parseInt(taskId),
         },
       });
 
       if (adminUser) {
-        if (leadFound) {
+        if (taskFound) {
           if (status === 0) {
-            const updatedLead = await prisma.lead.update({
+            const updatedTask = await prisma.task.update({
               where: {
-                id: parseInt(leadId),
+                id: parseInt(taskId),
               },
               data: {
                 status,
               },
             });
 
-            const leadEvents = await prisma.event.findMany({
+            const taskEvents = await prisma.event.findMany({
               where: {
-                leadMobileNo: leadFound.mobileNo,
+                taskId: parseInt(taskId),
               },
             });
 
-            if (leadEvents.length !== 0) {
+            if (taskEvents.length !== 0) {
               // delete all events
               await prisma.event.updateMany({
                 where: {
-                  leadMobileNo: leadFound.mobileNo,
+                  taskId: parseInt(taskId),
                 },
                 data: {
                   status,
@@ -174,39 +181,42 @@ class TaskController {
               });
             }
 
-            response.success(res, "Lead deleted successfully", {
-              updatedLead,
+            response.success(res, "Task deleted successfully", {
+              updatedTask,
             });
           } else {
-            const updatedLead = await prisma.lead.update({
+            const updatedTask = await prisma.task.update({
               where: {
-                id: parseInt(leadId),
+                id: parseInt(taskId),
               },
               data: {
-                clientName,
-                mobileNo,
-                address,
+                task: taskName,
+                projectGenre,
+                projectStatus,
+                projectDueDate,
+                youtubeLink,
+                description,
               },
             });
 
             const addedBy = await prisma.user.findFirst({
               where: {
-                id: parseInt(updatedLead.addedBy),
+                id: parseInt(updatedTask.addedBy),
               },
             });
 
-            response.success(res, "Lead updated successfully", {
-              updatedLead: { ...updatedLead, addedBy },
+            response.success(res, "Task updated successfully", {
+              updatedTask: { ...updatedTask, addedBy },
             });
           }
         } else {
-          response.error(res, "Lead not found!");
+          response.error(res, "Task not found!");
         }
       } else {
         response.error(res, "User not found!");
       }
     } catch (error) {
-      console.log("error while updating lead ", error);
+      console.log("error while updating task ", error);
     }
   }
 }

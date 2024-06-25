@@ -165,11 +165,11 @@ model Task{
 
 model Event{
   id Int @id @default(autoincrement())
-  clientName String
+  clientId Int
   eventName String
   eventDate String
   taskId Int
-  status Int?
+  status Int? @default(1)
   addedBy Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
