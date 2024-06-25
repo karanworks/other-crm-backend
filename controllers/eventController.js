@@ -6,7 +6,7 @@ const getToken = require("../utils/getToken");
 class EventController {
   async eventsGet(req, res) {
     try {
-      const { leadMobileNo } = req.params;
+      const { mobileNo } = req.params;
       const token = await getToken(req, res);
 
       if (token) {
@@ -24,7 +24,7 @@ class EventController {
 
         const leadEvents = await prisma.event.findMany({
           where: {
-            leadMobileNo,
+            mobileNo,
             status: 1,
           },
         });

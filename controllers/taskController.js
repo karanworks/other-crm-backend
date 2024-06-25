@@ -2,119 +2,78 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const response = require("../utils/response");
 const getToken = require("../utils/getToken");
-class LeadController {
+class TaskController {
   async tasksGet(req, res) {
     try {
       const token = await getToken(req, res);
 
       if (token) {
-        const { isActive } = await prisma.user.findFirst({
+        const loggedInUser = await prisma.user.findFirst({
           where: {
             token: parseInt(token),
           },
+          select: {
+            id: true,
+            email: true,
+            password: true,
+            adminId: true,
+            roleId: true,
+          },
         });
 
-        if (isActive) {
-          const loggedInUser = await prisma.user.findFirst({
-            where: {
-              token: parseInt(token),
-            },
-            select: {
-              id: true,
-              email: true,
-              password: true,
-              adminId: true,
-              roleId: true,
-            },
+        const { password, ...adminDataWithoutPassword } = loggedInUser;
+
+        // if user is admin return all leads
+        if (loggedInUser.roleId === 1) {
+          const allClientTasks = await prisma.task.findMany({
+            where: {},
           });
 
-          const userLeads = await prisma.lead.findMany({
-            where: {
-              addedBy: loggedInUser.id,
-              status: 1,
-            },
-          });
-
-          const leadsWithEvents = await Promise.all(
-            userLeads.map(async (lead) => {
-              const leadEvents = await prisma.event.findMany({
+          const allClientTasksWithAddedBy = await Promise.all(
+            allClientTasks.map(async (task) => {
+              const addedByUser = await prisma.user.findFirst({
                 where: {
-                  leadMobileNo: lead.mobileNo,
-                  status: 1,
+                  id: parseInt(task.addedBy),
                 },
               });
 
-              const addedBy = await prisma.user.findFirst({
-                where: {
-                  id: parseInt(lead.addedBy),
-                },
-              });
-
-              if (leadEvents.length === 0) {
-                return { ...lead, addedBy };
-              } else {
-                return {
-                  ...lead,
-                  events: leadEvents,
-                  addedBy,
-                };
-              }
+              return {
+                ...task,
+                addedBy: addedByUser,
+              };
             })
           );
 
-          const dropdowns = await prisma.dropdown.findMany({});
-
-          const { password, ...adminDataWithoutPassword } = loggedInUser;
-
-          // if user is admin return all leads
-          if (loggedInUser.roleId === 1) {
-            const allLeads = await prisma.lead.findMany({
-              where: {
-                status: 1,
-              },
-            });
-
-            const allLeadsWithEvents = await Promise.all(
-              allLeads?.map(async (lead) => {
-                const leadEvents = await prisma.event.findMany({
-                  where: {
-                    leadMobileNo: lead.mobileNo,
-                    status: 1,
-                  },
-                });
-
-                const addedBy = await prisma.user.findFirst({
-                  where: {
-                    id: parseInt(lead.addedBy),
-                  },
-                });
-
-                if (leadEvents.length === 0) {
-                  return { ...lead, addedBy };
-                } else {
-                  return {
-                    ...lead,
-                    events: leadEvents,
-                    addedBy,
-                  };
-                }
-              })
-            );
-
-            response.success(res, "Leads fetched", {
-              ...adminDataWithoutPassword,
-              dropdowns,
-              leads: allLeadsWithEvents,
-            });
-          } else {
-            response.success(res, "Leads fetched", {
-              ...adminDataWithoutPassword,
-              dropdowns,
-              leads: leadsWithEvents,
-            });
-          }
+          response.success(res, "Tasks fetched", {
+            ...adminDataWithoutPassword,
+            tasks: allClientTasksWithAddedBy,
+          });
         } else {
-          response.error(res, "User not active!");
+          const clientTasks = await prisma.task.findMany({
+            where: {
+              addedBy: parseInt(loggedInUser.id),
+            },
+          });
+
+          const clientTasksWithAddedBy = await Promise.all(
+            clientTasks.map(async (task) => {
+              const addedByUser = await prisma.user.findFirst({
+                where: {
+                  id: parseInt(task.addedBy),
+                },
+              });
+
+              return {
+                ...task,
+                addedBy: addedByUser,
+              };
+            })
+          );
+
+          response.success(res, "Tasks fetched", {
+            ...adminDataWithoutPassword,
+            tasks: clientTasksWithAddedBy,
+          });
         }
       } else {
         response.error(res, "user not already logged in.");
@@ -127,15 +86,14 @@ class LeadController {
   async taskCreatePost(req, res) {
     try {
       const {
-        clientName,
-        mobileNo,
+        taskName,
         projectGenre,
         projectStatus,
         projectDueDate,
         youtubeLink,
-        address,
         description,
-        task,
+        clientId,
+        clientName,
       } = req.body;
 
       const token = await getToken(req, res);
@@ -146,31 +104,23 @@ class LeadController {
         },
       });
 
-      const newLead = await prisma.lead.create({
+      const newTask = await prisma.task.create({
         data: {
-          clientName,
-          mobileNo,
-          address,
-          status: 1,
+          task: taskName,
+          projectGenre,
+          projectStatus,
+          projectDueDate,
+          description,
+          youtubeLink,
           addedBy: adminUser.id,
+          clientId,
+          clientName,
         },
       });
 
-      const newTask = await prisma.task.create({
-        task,
-        projectGenre,
-        projectStatus,
-        projectDueDate,
-        description,
-        youtubeLink,
-        addedBy: adminUser.id,
-        clientId: newLead.id,
-        clientName: newLead.clientName,
-      });
-
-      response.success(res, "new lead created!", newLead);
+      response.success(res, "new task created!", newTask);
     } catch (error) {
-      console.log("error while creating lead ->", error);
+      console.log("error while creating task ->", error);
     }
   }
 
@@ -261,4 +211,4 @@ class LeadController {
   }
 }
 
-module.exports = new LeadController();
+module.exports = new TaskController();

@@ -19,7 +19,7 @@ model User {
   email    String @unique
   password String
   token    Int      @default(0)
-  leads Lead[]
+  clients Client[]
   dropdowns Dropdown[]
   invoices Invoice[]
   payments Payment[]
@@ -134,7 +134,7 @@ model Payment{
   updatedAt DateTime @default(now())
 }
 
-model Lead {
+model Client {
   id Int @id @default(autoincrement())
   clientName String 
   mobileNo String @unique
