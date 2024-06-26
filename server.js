@@ -17,6 +17,7 @@ const branchDropdownRouter = require("./routes/branchDropdown");
 const taskRouter = require("./routes/task");
 const pendingTasksRouter = require("./routes/pendingTasks");
 const completedTasksRouter = require("./routes/completedTasks");
+const clientAlreadyExistRouter = require("./routes/clientAlreadyExist");
 
 // cookie parser
 const cookieParser = require("cookie-parser");
@@ -65,6 +66,7 @@ app.use("/", branchDropdownRouter);
 app.use("/", taskRouter);
 app.use("/", pendingTasksRouter);
 app.use("/", completedTasksRouter);
+app.use("/", clientAlreadyExistRouter);
 
 app.listen(process.env.PORT || 3003, () => {
   console.log(`Server listening at port no -> ${process.env.PORT}`);

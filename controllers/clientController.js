@@ -119,43 +119,53 @@ class ClientController {
       });
 
       if (adminUser) {
-        const newClient = await prisma.client.create({
-          data: {
-            clientName,
+        const mobileNoAlreadyExist = await prisma.client.findFirst({
+          where: {
             mobileNo,
-            address,
-            status: 1,
-            addedBy: adminUser.id,
           },
         });
 
-        const [day, month, year] = projectDueDate.split("/").map(Number);
+        if (mobileNoAlreadyExist) {
+          response.error(res, "Mobile no is already registered");
+        } else {
+          const newClient = await prisma.client.create({
+            data: {
+              clientName,
+              mobileNo,
+              address,
+              status: 1,
+              addedBy: adminUser.id,
+            },
+          });
 
-        const date = new Date(year, month - 1, day);
+          const [day, month, year] = projectDueDate.split("/").map(Number);
 
-        /// Get current time in ISO format
-        const currentTime = new Date().toISOString();
+          const date = new Date(year, month - 1, day);
 
-        // Combine date and current time
-        const isoDateTime = `${date.toISOString().split("T")[0]}T${
-          currentTime.split("T")[1]
-        }`;
+          /// Get current time in ISO format
+          const currentTime = new Date().toISOString();
 
-        const newTask = await prisma.task.create({
-          data: {
-            task,
-            projectGenre,
-            projectStatus,
-            projectDueDate: isoDateTime,
-            description,
-            youtubeLink,
-            addedBy: adminUser.id,
-            clientId: newClient.id,
-            clientName: newClient.clientName,
-          },
-        });
+          // Combine date and current time
+          const isoDateTime = `${date.toISOString().split("T")[0]}T${
+            currentTime.split("T")[1]
+          }`;
 
-        response.success(res, "new client created!", newClient);
+          const newTask = await prisma.task.create({
+            data: {
+              task,
+              projectGenre,
+              projectStatus,
+              projectDueDate: isoDateTime,
+              description,
+              youtubeLink,
+              addedBy: adminUser.id,
+              clientId: newClient.id,
+              clientName: newClient.clientName,
+            },
+          });
+
+          response.success(res, "new client created!", newClient);
+        }
       } else {
         response.error(res, "User not logged in!");
       }
