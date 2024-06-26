@@ -151,7 +151,7 @@ model Task{
   task String
   projectGenre String
   projectStatus String
-  projectDueDate String
+  projectDueDate DateTime
   youtubeLink String?
   description String
   status Int @default(1)
