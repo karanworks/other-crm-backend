@@ -36,6 +36,9 @@ class PendingTasksController {
               projectDueDate: {
                 lt: currentDate,
               },
+              projectStatus: {
+                not: "Completed",
+              },
             },
           });
 
@@ -66,6 +69,9 @@ class PendingTasksController {
               },
               projectDueDate: {
                 lt: currentDate,
+              },
+              projectStatus: {
+                not: "Completed",
               },
             },
           });

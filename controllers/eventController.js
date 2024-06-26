@@ -4,9 +4,8 @@ const response = require("../utils/response");
 const getToken = require("../utils/getToken");
 
 class EventController {
-  async eventsGet(req, res) {
+  async eventsAllGet(req, res) {
     try {
-      const { taskId } = req.params;
       const token = await getToken(req, res);
 
       if (token) {
@@ -16,6 +15,34 @@ class EventController {
           },
         });
 
+        const allEventsWithClientName = await Promise.all(
+          allEvents.map(async (event) => {
+            const eventClient = await prisma.client.findFirst({
+              where: {
+                id: parseInt(event.clientId),
+              },
+            });
+
+            return { ...event, clientName: eventClient.clientName };
+          })
+        );
+
+        response.success(res, "Events fetched", {
+          allEvents: allEventsWithClientName,
+        });
+      } else {
+        response.error(res, "user not already logged in.");
+      }
+    } catch (error) {
+      console.log("error while getting all events", error);
+    }
+  }
+  async eventsGet(req, res) {
+    try {
+      const { taskId } = req.params;
+      const token = await getToken(req, res);
+
+      if (token) {
         const leadEvents = await prisma.event.findMany({
           where: {
             taskId: parseInt(taskId),
@@ -25,7 +52,6 @@ class EventController {
 
         response.success(res, "Events fetched", {
           leadEvents,
-          allEvents,
         });
       } else {
         response.error(res, "user not already logged in.");
@@ -122,33 +148,6 @@ class EventController {
       console.log("error while updating event ", error);
     }
   }
-  // async eventRemoveDelete(req, res) {
-  //   try {
-  //     const { eventId } = req.params;
-
-  //     const eventFound = await prisma.event.findFirst({
-  //       where: {
-  //         id: parseInt(eventId),
-  //       },
-  //     });
-
-  //     if (eventFound) {
-  //       const deletedEvent = await prisma.event.delete({
-  //         where: {
-  //           id: parseInt(eventId),
-  //         },
-  //       });
-
-  //       response.success(res, "Event deleted successfully!", {
-  //         deletedEvent,
-  //       });
-  //     } else {
-  //       response.error(res, "Event does not exist!");
-  //     }
-  //   } catch (error) {
-  //     console.log("error while deleting event ", error);
-  //   }
-  // }
 }
 
 module.exports = new EventController();
