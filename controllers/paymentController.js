@@ -27,19 +27,7 @@ class PaymentController {
               password: true,
               adminId: true,
               roleId: true,
-
-              leads: true,
               dropdowns: true,
-              // invoices: {
-              //   select: {
-              //     id: true,
-              //     clientName: true,
-              //     totalAmount: true,
-              //     balance: true,
-              //     paymentDueDate: true,
-              //     payments: true,
-              //   },
-              // },
             },
           });
 

@@ -129,12 +129,24 @@ class ClientController {
           },
         });
 
+        const [day, month, year] = projectDueDate.split("/").map(Number);
+
+        const date = new Date(year, month - 1, day);
+
+        /// Get current time in ISO format
+        const currentTime = new Date().toISOString();
+
+        // Combine date and current time
+        const isoDateTime = `${date.toISOString().split("T")[0]}T${
+          currentTime.split("T")[1]
+        }`;
+
         const newTask = await prisma.task.create({
           data: {
             task,
             projectGenre,
             projectStatus,
-            projectDueDate,
+            projectDueDate: isoDateTime,
             description,
             youtubeLink,
             addedBy: adminUser.id,
