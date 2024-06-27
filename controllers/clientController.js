@@ -140,16 +140,17 @@ class ClientController {
 
           const [day, month, year] = projectDueDate.split("/").map(Number);
 
-          const date = new Date(year, month - 1, day);
+          // Set the date to noon to avoid timezone issues
+          const date = new Date(year, month - 1, day, 12, 0, 0);
 
-          /// Get current time in ISO format
+          // Get the date part of the ISO string (ignoring the time part)
+          const isoDate = date.toISOString().split("T")[0];
+
+          // Get current time in ISO format
           const currentTime = new Date().toISOString();
 
-          // Combine date and current time
-          const isoDateTime = `${date.toISOString().split("T")[0]}T${
-            currentTime.split("T")[1]
-          }`;
-
+          // Combine date and current time (keeping the time part)
+          const isoDateTime = `${isoDate}T${currentTime.split("T")[1]}`;
           const newTask = await prisma.task.create({
             data: {
               task,

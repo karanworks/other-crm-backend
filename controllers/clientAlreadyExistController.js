@@ -17,8 +17,6 @@ class ClientAlreadyExistController {
         });
 
         if (clientAlreadyExist) {
-          console.log("CLIENT ALREADY EXIST ->", clientAlreadyExist);
-
           response.error(res, "Mobile no is already registered!");
         } else {
           response.success(res, "Mobile no not registered!");

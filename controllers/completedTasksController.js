@@ -33,6 +33,7 @@ class CompletedTasksController {
           const allCompletedTasks = await prisma.task.findMany({
             where: {
               projectStatus: "Completed",
+              status: 1,
             },
           });
 
@@ -63,6 +64,7 @@ class CompletedTasksController {
               },
 
               projectStatus: "Completed",
+              status: 1,
             },
           });
 
