@@ -35,6 +35,11 @@ class ClientController {
                 id: parseInt(client.addedBy),
               },
             });
+            const tasks = await prisma.task.findMany({
+              where: {
+                clientId: client.id,
+              },
+            });
 
             return {
               ...client,
@@ -42,6 +47,7 @@ class ClientController {
                 username: addedByUser.username,
                 branch: addedByUser.branch,
               },
+              tasks,
             };
           })
         );
@@ -66,12 +72,19 @@ class ClientController {
                 },
               });
 
+              const tasks = await prisma.task.findMany({
+                where: {
+                  clientId: client.id,
+                },
+              });
+
               return {
                 ...client,
                 addedBy: {
                   username: addedByUser.username,
                   branch: addedByUser.branch,
                 },
+                tasks,
               };
             })
           );

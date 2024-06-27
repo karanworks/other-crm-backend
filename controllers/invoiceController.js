@@ -26,16 +26,18 @@ class InvoiceController {
               adminId: true,
               roleId: true,
 
-              // leads: true,
               dropdowns: true,
               invoices: {
                 select: {
                   id: true,
+                  clientId: true,
+                  taskId: true,
                   clientName: true,
                   totalAmount: true,
                   balance: true,
                   paymentDueDate: true,
                   payments: true,
+                  taskName: true,
                 },
               },
             },
@@ -60,7 +62,8 @@ class InvoiceController {
   async invoiceCreatePost(req, res) {
     try {
       const {
-        clientName,
+        clientId,
+        taskId,
         paymentAmount,
         paymentDate,
         totalAmount,
@@ -75,9 +78,23 @@ class InvoiceController {
         },
       });
 
+      const client = await prisma.client.findFirst({
+        where: {
+          id: parseInt(clientId),
+        },
+      });
+      const task = await prisma.task.findFirst({
+        where: {
+          id: parseInt(taskId),
+        },
+      });
+
       const newInvoice = await prisma.invoice.create({
         data: {
-          clientName,
+          clientName: client.clientName,
+          taskName: task.task,
+          taskId: task.id,
+          clientId: client.id,
           totalAmount,
           paymentDueDate,
           addedBy: adminUser.id,

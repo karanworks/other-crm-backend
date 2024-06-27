@@ -108,11 +108,12 @@ model BranchDropdown{
 
 model Invoice{
   id Int @id @default(autoincrement())
-  clientName String @unique
+  clientName String 
+  clientId Int
+  taskId Int
+  taskName String
   totalAmount String
   balance Int?
-  paymentDate String?
-  paymentAmount String?
   paymentDueDate String
   payments Payment[]
   user User? @relation(fields: [addedBy], references: [id])
