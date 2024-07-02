@@ -1,6 +1,6 @@
 const express = require("express");
 const paymentRouter = express.Router({ mergeParams: true });
-const PaymentController = require("../controllers/PaymentController");
+const PaymentController = require("../controllers/paymentController");
 
 paymentRouter.get("/:invoiceId/payments", PaymentController.paymentsGet);
 paymentRouter.post(

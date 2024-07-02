@@ -30,6 +30,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: "http://localhost:3002",
+    // origin: "https://vickyvox.in",
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
     exposedHeaders: ["set-cookie"],
@@ -38,6 +39,7 @@ app.use(
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3002");
+  // res.setHeader("Access-Control-Allow-Origin", "http://vickyvox.in");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, PUT, POST, PATCH, DELETE"

@@ -7,6 +7,7 @@ class AdminUsers {
   async adminUsersGet(req, res) {
     try {
       const token = await getToken(req, res);
+
       if (token) {
         const { isActive } = await prisma.user.findFirst({
           where: {
