@@ -6,5 +6,9 @@ pendingTasksRouter.get(
   "/pending-tasks",
   PendingTasksController.pendingTasksGet
 );
+pendingTasksRouter.get(
+  "/pending-tasks/:searchQuery",
+  PendingTasksController.pendingTaskSearch
+);
 
 module.exports = pendingTasksRouter;

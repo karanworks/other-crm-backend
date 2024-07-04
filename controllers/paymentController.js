@@ -34,6 +34,7 @@ class PaymentController {
           const invoicePayments = await prisma.payment.findMany({
             where: {
               invoiceId: parseInt(invoiceId),
+              status: 1,
             },
           });
 
@@ -110,8 +111,10 @@ class PaymentController {
 
   async paymentUpdatePatch(req, res) {
     try {
-      const { paymentAmount, paymentDate } = req.body;
+      const { paymentAmount, paymentDate, status } = req.body;
       const { paymentId, invoiceId } = req.params;
+
+      console.log("STATUS WHILE DELETING PAYMENT ->", status);
 
       const token = await getToken(req, res);
 
@@ -130,45 +133,77 @@ class PaymentController {
 
       if (adminUser) {
         if (paymentFound) {
-          const updatedPayment = await prisma.payment.update({
-            where: {
-              id: parseInt(paymentId),
-            },
-            data: {
-              paymentAmount,
-              paymentDate,
-            },
-          });
+          if (status === 0) {
+            const updatedPayment = await prisma.payment.update({
+              where: {
+                id: parseInt(paymentId),
+              },
+              data: {
+                status,
+              },
+            });
 
-          const invoice = await prisma.invoice.findFirst({
-            where: {
-              id: parseInt(invoiceId),
-            },
-          });
+            const invoice = await prisma.invoice.findFirst({
+              where: {
+                id: parseInt(updatedPayment.invoiceId),
+              },
+            });
 
-          const invoicePayments = await prisma.payment.findMany({
-            where: {
-              invoiceId: parseInt(invoiceId),
-            },
-          });
+            await prisma.invoice.update({
+              where: {
+                id: parseInt(updatedPayment.invoiceId),
+              },
+              data: {
+                balance:
+                  parseInt(invoice.balance) +
+                  parseInt(updatedPayment.paymentAmount),
+              },
+            });
 
-          const totalPaidAmount = invoicePayments?.reduce((acc, curr) => {
-            return acc + parseInt(curr.paymentAmount);
-          }, 0);
+            response.success(res, "Payment removed successfully", {
+              updatedPayment,
+            });
+          } else {
+            const updatedPayment = await prisma.payment.update({
+              where: {
+                id: parseInt(paymentId),
+              },
+              data: {
+                paymentAmount,
+                paymentDate,
+              },
+            });
 
-          const updatedInvoiceWithBalance = await prisma.invoice.update({
-            where: {
-              id: parseInt(invoiceId),
-            },
-            data: {
-              balance: invoice.totalAmount - totalPaidAmount,
-            },
-          });
+            const invoice = await prisma.invoice.findFirst({
+              where: {
+                id: parseInt(invoiceId),
+              },
+            });
 
-          response.success(res, "Payment updated successfully", {
-            updatedPayment,
-            invoiceBalance: updatedInvoiceWithBalance.balance,
-          });
+            const invoicePayments = await prisma.payment.findMany({
+              where: {
+                invoiceId: parseInt(invoiceId),
+              },
+            });
+
+            const totalPaidAmount = invoicePayments?.reduce((acc, curr) => {
+              return acc + parseInt(curr.paymentAmount);
+            }, 0);
+
+            const updatedInvoiceWithBalance = await prisma.invoice.update({
+              where: {
+                id: parseInt(invoiceId),
+              },
+              data: {
+                balance: invoice.totalAmount - totalPaidAmount,
+              },
+            });
+
+            response.success(res, "Payment updated successfully", {
+              updatedPayment,
+              invoiceBalance: updatedInvoiceWithBalance.balance,
+            });
+          }
         } else {
           response.error(res, "Payment not found!");
         }

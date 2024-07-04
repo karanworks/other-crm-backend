@@ -6,5 +6,9 @@ completedTasksRouter.get(
   "/completed-tasks",
   CompletedTasksController.completedTasksGet
 );
+completedTasksRouter.get(
+  "/completed-tasks/:searchQuery",
+  CompletedTasksController.searchCompletedTasks
+);
 
 module.exports = completedTasksRouter;

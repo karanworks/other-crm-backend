@@ -29,8 +29,14 @@ model User {
   isActive Int      @default(0)
   branch String?
   userIp   String
+  status Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
+
+  @@index([username])
+  @@index([email])
+  @@index([branch])
 }
 
 model Menu{
@@ -85,13 +91,11 @@ model RoleAssign{
   updatedAt DateTime @default(now())
 }
 
-
-
 model Dropdown{
   id Int @id @default(autoincrement())
   dropdownName String?
   category String
-  user User? @relation(fields: [addedBy], references: [id])
+  user User? @relation(fields: [addedBy], references: [id], onDelete: Cascade)
   addedBy Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
@@ -117,9 +121,14 @@ model Invoice{
   paymentDueDate String
   payments Payment[]
   user User? @relation(fields: [addedBy], references: [id])
+  status Int @default(1)
   addedBy Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
+
+  @@index([clientName])
+  @@index([taskName])
 }
 
 
@@ -131,6 +140,7 @@ model Payment{
   paymentDate String
   user User? @relation(fields: [addedBy], references: [id])
   addedBy Int?
+  status Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 }
@@ -145,6 +155,10 @@ model Client {
   status Int @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
+
+  @@index([clientName])
+  @@index([mobileNo])
 }
 
 model Task{
@@ -161,6 +175,11 @@ model Task{
   clientName String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
+
+  @@index([task])
+  @@index([clientName])
+  @@index([projectGenre])
 }
 
 

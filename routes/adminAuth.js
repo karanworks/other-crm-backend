@@ -10,10 +10,10 @@ adminAuthRouter.patch(
   "/user/:userId/edit",
   adminAuthController.userUpdatePatch
 );
-adminAuthRouter.delete(
-  "/user/:userId/delete",
-  adminAuthController.userRemoveDelete
-);
+// adminAuthRouter.delete(
+//   "/user/:userId/delete",
+//   adminAuthController.userRemoveDelete
+// );
 adminAuthRouter.get("/logout", adminAuthController.adminLogoutGet);
 
 module.exports = adminAuthRouter;

@@ -255,6 +255,60 @@ class ClientController {
       console.log("error while updating client ", error);
     }
   }
+
+  async clientSearch(req, res) {
+    try {
+      const token = await getToken(req, res);
+
+      const { searchQuery } = req.params;
+
+      if (token) {
+        const { isActive } = await prisma.user.findFirst({
+          where: {
+            token: parseInt(token),
+          },
+        });
+
+        if (isActive) {
+          const loggedInUser = await prisma.user.findFirst({
+            where: {
+              token: parseInt(token),
+            },
+            select: {
+              id: true,
+              email: true,
+              password: true,
+              adminId: true,
+              roleId: true,
+            },
+          });
+
+          const clients = await prisma.client.findMany({
+            where: {
+              status: 1,
+              OR: [
+                { clientName: { contains: searchQuery } },
+                { mobileNo: { contains: searchQuery } },
+              ],
+            },
+          });
+
+          const { password, ...adminDataWithoutPassword } = loggedInUser;
+
+          response.success(res, "Searched Clients fetched", {
+            ...adminDataWithoutPassword,
+            clients,
+          });
+        } else {
+          response.error(res, "User not active");
+        }
+      } else {
+        response.error(res, "User not already logged in.");
+      }
+    } catch (error) {
+      console.log("error while searching client", error);
+    }
+  }
 }
 
 module.exports = new ClientController();

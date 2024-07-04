@@ -3,7 +3,7 @@ const branchDropdownRouter = express.Router({ mergeParams: true });
 const BranchDropdownController = require("../controllers/branchDropdownController");
 
 branchDropdownRouter.get(
-  "/branch-dropdown/",
+  "/branch-dropdown",
   BranchDropdownController.branchDropdownGet
 );
 branchDropdownRouter.post(

@@ -19,12 +19,6 @@ class AdminAuthController {
         },
       });
 
-      const branch = await prisma.branchDropdown.findFirst({
-        where: {
-          id: parseInt(branchId),
-        },
-      });
-
       if (loggedInUser) {
         if (alreadyRegistered) {
           if (alreadyRegistered.email === email) {
@@ -35,6 +29,12 @@ class AdminAuthController {
             );
           }
         } else {
+          const branch = await prisma.branchDropdown.findFirst({
+            where: {
+              id: parseInt(branchId),
+            },
+          });
+
           const newUser = await prisma.user.create({
             data: {
               username: name,
@@ -64,6 +64,7 @@ class AdminAuthController {
             email,
             password,
             userIp,
+            branch: "Admin",
             roleId: 1,
           },
         });
@@ -96,12 +97,6 @@ class AdminAuthController {
       if (!userFound) {
         response.error(res, "No user found with this email!");
       } else if (password === userFound.password) {
-        // checking if user is active to prevent him logging again
-        // if (userFound.isActive) {
-        //   response.error(res, "You were not logged out properly!");
-        //   return;
-        // }
-
         // generates a number between 1000 and 10000 to be used as token
         const loginToken = Math.floor(
           Math.random() * (10000 - 1000 + 1) + 1000
@@ -146,13 +141,14 @@ class AdminAuthController {
           secure: true,
         });
 
-        // res.cookie("token", loginToken, {
-        //   expires: expirationDate,
-        //   httpOnly: true,
-        //   secure: true,
-        //   domain: "https://vickyvox.in",
-        //   path: "/",
-        // });
+        //     res.cookie("token", loginToken, {
+        //       expires: expirationDate,
+        //       httpOnly: true,
+        //       secure: true,
+        //       domain: "vickyvox.in",
+        //       path: "/",
+        //       sameSite: "none"
+        //     });
 
         response.success(res, "User logged in!", {
           ...adminDataWithoutPassword,
@@ -169,7 +165,7 @@ class AdminAuthController {
 
   async userUpdatePatch(req, res) {
     try {
-      const { name, email, password, roleId, branchId } = req.body;
+      const { name, email, password, roleId, branchId, status } = req.body;
 
       const { userId } = req.params;
 
@@ -180,40 +176,56 @@ class AdminAuthController {
         },
       });
 
-      const branch = await prisma.branchDropdown.findFirst({
-        where: {
-          id: parseInt(branchId),
-        },
-      });
-
       let alreadyRegistered;
 
       if (userFound) {
-        if (alreadyRegistered) {
-          if (alreadyRegistered.email === email) {
-            response.error(
-              res,
-              "User already registered with this CRM Email.",
-              alreadyRegistered
-            );
-          }
-        } else {
+        if (status === 0) {
           const updatedUser = await prisma.user.update({
             where: {
-              email,
+              id: userFound.id,
             },
+
             data: {
-              username: name,
-              email,
-              password,
-              branch: branch.branchDropdownName,
-              roleId: parseInt(roleId),
+              status,
             },
           });
 
-          response.success(res, "User updated successfully!", {
+          response.success(res, "User removed successfully!", {
             updatedUser,
           });
+        } else {
+          if (alreadyRegistered) {
+            if (alreadyRegistered.email === email) {
+              response.error(
+                res,
+                "User already registered with this Email.",
+                alreadyRegistered
+              );
+            }
+          } else {
+            const branch = await prisma.branchDropdown.findFirst({
+              where: {
+                id: parseInt(branchId),
+              },
+            });
+
+            const updatedUser = await prisma.user.update({
+              where: {
+                email,
+              },
+              data: {
+                username: name,
+                email,
+                password,
+                branch: branch.branchDropdownName,
+                roleId: parseInt(roleId),
+              },
+            });
+
+            response.success(res, "User updated successfully!", {
+              updatedUser,
+            });
+          }
         }
       } else {
         response.error(res, "User not found!");
@@ -223,32 +235,33 @@ class AdminAuthController {
     }
   }
 
-  async userRemoveDelete(req, res) {
-    try {
-      const { userId } = req.params;
+  // earlier wrote this api to delete the user from the database but now we don't delete the user from database instead we just change the status from 1 to 0, and gets updated in update api
+  // async userRemoveDelete(req, res) {
+  //   try {
+  //     const { userId } = req.params;
 
-      // finding user from userId
-      const userFound = await prisma.user.findFirst({
-        where: {
-          id: parseInt(userId),
-        },
-      });
+  //     // finding user from userId
+  //     const userFound = await prisma.user.findFirst({
+  //       where: {
+  //         id: parseInt(userId),
+  //       },
+  //     });
 
-      if (userFound) {
-        const deletedUser = await prisma.user.delete({
-          where: {
-            id: parseInt(userId),
-          },
-        });
+  //     if (userFound) {
+  //       const deletedUser = await prisma.user.delete({
+  //         where: {
+  //           id: parseInt(userId),
+  //         },
+  //       });
 
-        response.success(res, "User deleted successfully!", { deletedUser });
-      } else {
-        response.error(res, "User does not exist! ");
-      }
-    } catch (error) {
-      console.log("error while deleting user ", error);
-    }
-  }
+  //       response.success(res, "User deleted successfully!", { deletedUser });
+  //     } else {
+  //       response.error(res, "User does not exist! ");
+  //     }
+  //   } catch (error) {
+  //     console.log("error while deleting user ", error);
+  //   }
+  // }
 
   async userLoginGet(req, res) {
     try {

@@ -28,6 +28,9 @@ class InvoiceController {
 
               dropdowns: true,
               invoices: {
+                where: {
+                  status: 1,
+                },
                 select: {
                   id: true,
                   clientId: true,
@@ -36,8 +39,20 @@ class InvoiceController {
                   totalAmount: true,
                   balance: true,
                   paymentDueDate: true,
-                  payments: true,
+                  payments: {
+                    where: {
+                      status: 1,
+                    },
+
+                    select: {
+                      invoice: true,
+                      paymentAmount: true,
+                      paymentDate: true,
+                      user: true,
+                    },
+                  },
                   taskName: true,
+                  status: true,
                 },
               },
             },
@@ -45,9 +60,22 @@ class InvoiceController {
 
           const { password, ...adminDataWithoutPassword } = loggedInUser;
 
-          response.success(res, "Invoices fetched", {
-            ...adminDataWithoutPassword,
-          });
+          if (loggedInUser.roleId === 1) {
+            const invoices = await prisma.invoice.findMany({
+              where: {
+                status: 1,
+              },
+            });
+
+            response.success(res, "Invoices fetched", {
+              ...adminDataWithoutPassword,
+              invoices,
+            });
+          } else {
+            response.success(res, "Invoices fetched", {
+              ...adminDataWithoutPassword,
+            });
+          }
         } else {
           response.error(res, "User not active!");
         }
@@ -56,6 +84,77 @@ class InvoiceController {
       }
     } catch (error) {
       console.log("error while getting invoices", error);
+    }
+  }
+
+  async searchInvoices(req, res) {
+    try {
+      const token = await getToken(req, res);
+
+      const { searchQuery } = req.params;
+
+      if (token) {
+        const { isActive } = await prisma.user.findFirst({
+          where: {
+            token: parseInt(token),
+          },
+        });
+
+        if (isActive) {
+          const loggedInUser = await prisma.user.findFirst({
+            where: {
+              token: parseInt(token),
+            },
+            select: {
+              id: true,
+              email: true,
+              password: true,
+              adminId: true,
+              roleId: true,
+              dropdowns: true,
+            },
+          });
+
+          const { password, ...adminDataWithoutPassword } = loggedInUser;
+
+          if (loggedInUser.roleId === 1) {
+            const invoices = await prisma.invoice.findMany({
+              where: {
+                OR: [
+                  { clientName: { contains: searchQuery } },
+                  { taskName: { contains: searchQuery } },
+                ],
+              },
+            });
+
+            response.success(res, "Invoices fetched", {
+              ...adminDataWithoutPassword,
+              invoices,
+            });
+          } else {
+            const invoices = await prisma.invoice.findMany({
+              where: {
+                addedBy: loggedInUser.id,
+                OR: [
+                  { clientName: { contains: searchQuery } },
+                  { taskName: { contains: searchQuery } },
+                ],
+              },
+            });
+
+            response.success(res, "Invoices fetched", {
+              ...adminDataWithoutPassword,
+              invoices,
+            });
+          }
+        } else {
+          response.error(res, "User not active!");
+        }
+      } else {
+        response.error(res, "user not already logged in.");
+      }
+    } catch (error) {
+      console.log("error while searching invoices", error);
     }
   }
 
@@ -131,7 +230,8 @@ class InvoiceController {
 
   async invoiceUpdatePatch(req, res) {
     try {
-      const { totalAmount, balance, paymentDate, paymentDueDate } = req.body;
+      const { totalAmount, balance, paymentDate, paymentDueDate, status } =
+        req.body;
       const { invoiceId } = req.params;
 
       const token = await getToken(req, res);
@@ -151,21 +251,36 @@ class InvoiceController {
 
       if (adminUser) {
         if (invoiceFound) {
-          const updatedInvoice = await prisma.invoice.update({
-            where: {
-              id: parseInt(invoiceId),
-            },
-            data: {
-              totalAmount,
-              balance,
-              paymentDate,
-              paymentDueDate,
-            },
-          });
+          if (status === 0) {
+            const updatedInvoice = await prisma.invoice.update({
+              where: {
+                id: parseInt(invoiceId),
+              },
+              data: {
+                status,
+              },
+            });
 
-          response.success(res, "Invoice updated successfully", {
-            updatedInvoice,
-          });
+            response.success(res, "Invoice updated successfully", {
+              updatedInvoice,
+            });
+          } else {
+            const updatedInvoice = await prisma.invoice.update({
+              where: {
+                id: parseInt(invoiceId),
+              },
+              data: {
+                totalAmount,
+                balance,
+                paymentDate,
+                paymentDueDate,
+              },
+            });
+
+            response.success(res, "Invoice updated successfully", {
+              updatedInvoice,
+            });
+          }
         } else {
           response.error(res, "Invoice not found!");
         }
@@ -176,6 +291,7 @@ class InvoiceController {
       console.log("error while updating invoice ", error);
     }
   }
+
   async invoiceRemoveDelete(req, res) {
     try {
       const { invoiceId } = req.params;

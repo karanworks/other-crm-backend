@@ -235,6 +235,63 @@ class TaskController {
       console.log("error while updating task ", error);
     }
   }
+
+  async taskSearch(req, res) {
+    try {
+      const token = await getToken(req, res);
+
+      const { searchQuery } = req.params;
+
+      console.log("SEARCH QUERY FOR TASK ->", searchQuery);
+
+      if (token) {
+        const { isActive } = await prisma.user.findFirst({
+          where: {
+            token: parseInt(token),
+          },
+        });
+
+        if (isActive) {
+          const loggedInUser = await prisma.user.findFirst({
+            where: {
+              token: parseInt(token),
+            },
+            select: {
+              id: true,
+              email: true,
+              password: true,
+              adminId: true,
+              roleId: true,
+            },
+          });
+
+          const tasks = await prisma.task.findMany({
+            where: {
+              status: 1,
+              OR: [
+                { task: { contains: searchQuery } },
+                { clientName: { contains: searchQuery } },
+                { projectGenre: { contains: searchQuery } },
+              ],
+            },
+          });
+
+          const { password, ...adminDataWithoutPassword } = loggedInUser;
+
+          response.success(res, "Tasks Clients fetched", {
+            ...adminDataWithoutPassword,
+            tasks,
+          });
+        } else {
+          response.error(res, "User not active");
+        }
+      } else {
+        response.error(res, "User not already logged in.");
+      }
+    } catch (error) {
+      console.log("error while searching tasks", error);
+    }
+  }
 }
 
 module.exports = new TaskController();

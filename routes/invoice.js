@@ -3,6 +3,7 @@ const invoiceRouter = express.Router({ mergeParams: true });
 const InvoiceController = require("../controllers/invoiceController");
 
 invoiceRouter.get("/invoices", InvoiceController.invoicesGet);
+invoiceRouter.get("/invoices/:searchQuery", InvoiceController.searchInvoices);
 invoiceRouter.post("/invoice/create", InvoiceController.invoiceCreatePost);
 invoiceRouter.patch(
   "/invoice/:invoiceId/edit",
