@@ -9,9 +9,25 @@ class EventController {
       const token = await getToken(req, res);
 
       if (token) {
+        // getting completed tasks because we don't want to show the compeleted task's events
+        const completedTasks = await prisma.task.findMany({
+          where: {
+            projectStatus: "Completed",
+          },
+        });
+
+        const completedTasksIds = completedTasks.map((task) => {
+          return task.id;
+        });
+
         const allEvents = await prisma.event.findMany({
           where: {
             status: 1,
+            taskId: {
+              not: {
+                in: completedTasksIds,
+              },
+            },
           },
         });
 
