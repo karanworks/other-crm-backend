@@ -336,6 +336,38 @@ class AdminAuthController {
       console.log("error while loggin in user ", error);
     }
   }
+
+  async userChangePassword(req, res) {
+    try {
+      const loggedInUser = await getLoggedInUser(req, res);
+
+      const { currentPassword, newPassword } = req.body;
+
+      if (loggedInUser) {
+        if (loggedInUser.password !== currentPassword) {
+          response.error(
+            res,
+            "Current password doesn't match with our records!"
+          );
+        } else {
+          await prisma.user.update({
+            where: {
+              id: loggedInUser.id,
+            },
+            data: {
+              password: newPassword,
+            },
+          });
+
+          response.success(res, "Password changed successfully");
+        }
+      } else {
+        res.status(401).json({ message: "User not logged in" });
+      }
+    } catch (error) {
+      console.log("Error while changing password ->", error);
+    }
+  }
 }
 
 module.exports = new AdminAuthController();

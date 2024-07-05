@@ -82,7 +82,7 @@ class TaskController {
         response.error(res, "user not already logged in.");
       }
     } catch (error) {
-      console.log("error while getting leads", error);
+      console.log("error while getting tasks", error);
     }
   }
 
@@ -241,8 +241,6 @@ class TaskController {
       const token = await getToken(req, res);
 
       const { searchQuery } = req.params;
-
-      console.log("SEARCH QUERY FOR TASK ->", searchQuery);
 
       if (token) {
         const { isActive } = await prisma.user.findFirst({
